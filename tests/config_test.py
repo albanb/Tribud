@@ -19,6 +19,7 @@ class ConfigTest(unittest.TestCase):
     def setUp(self):
         self.path1 = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                   "data/config.json"))
+        os.makedirs(os.path.dirname(self.path1), exist_ok=True)
         with open(self.path1, "w") as filep:
             filep.write(
                 "{\"archive\":{\"input\": [\"data/config.json\",\
