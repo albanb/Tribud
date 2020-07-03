@@ -1,0 +1,2 @@
+language: python
+script: ./tests/all_test.py
