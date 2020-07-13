@@ -8,7 +8,7 @@ Test of the config.py module.
 
 import os.path
 import unittest
-from context import config
+from context import model
 
 
 class ConfigTest(unittest.TestCase):
@@ -32,30 +32,30 @@ class ConfigTest(unittest.TestCase):
 \"data/test\"], \"output\": \"data/tar\"}")
 
     def test_item_search_archive(self):
-        json_config = config.ConfigManager(self.path1)
+        json_config = model.ConfigManager(self.path1)
         result = json_config.item_search(("archive",))
         self.assertEqual(result, {'input': ['data/config.json',
                                             'data/test'],
                                   'output': 'data/tar'})
 
     def test_item_search_input(self):
-        json_config = config.ConfigManager(self.path1)
+        json_config = model.ConfigManager(self.path1)
         result = json_config.item_search(("archive", "input"))
         self.assertEqual(result, ['data/config.json',
                                   'data/test'])
 
     def test_item_search_output(self):
-        json_config = config.ConfigManager(self.path1)
+        json_config = model.ConfigManager(self.path1)
         result = json_config.item_search(("archive", "output"))
         self.assertEqual(result, 'data/tar')
 
     def test_item_search_archive_not_exist(self):
-        json_config = config.ConfigManager(self.path2)
+        json_config = model.ConfigManager(self.path2)
         result = json_config.item_search(("archive",))
         self.assertEqual(result, None)
 
     def test_item_search_input_not_exist(self):
-        json_config = config.ConfigManager(self.path2)
+        json_config = model.ConfigManager(self.path2)
         result = json_config.item_search(("archive", "input"))
         self.assertEqual(result, None)
 

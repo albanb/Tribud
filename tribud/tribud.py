@@ -6,7 +6,7 @@ A backup tool to save files on a local or remote dedicated location.
 
 import os.path
 import logging
-import config
+import model
 
 
 def main():
