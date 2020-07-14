@@ -8,10 +8,11 @@ Gather all tests for tribud.
 
 import sys
 import unittest
-import config_test
+import model_test
 
 if __name__ == '__main__':
-    suite1 = config_test.suite_config_test()
-    all_tests = unittest.TestSuite([suite1])
+    suite1 = model_test.suite_config_test()
+    suite2 = model_test.suite_dirhandler_test()
+    all_tests = unittest.TestSuite([suite1, suite2])
     result = unittest.TextTestRunner(verbosity=2).run(all_tests)
     sys.exit(not result.wasSuccessful())

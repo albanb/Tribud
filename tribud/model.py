@@ -71,6 +71,78 @@ class ConfigManager():
         return self._item_search(self.config[keys[0]], keys[1:])
 
 
+class Container():
+    """
+    This class is the place to store the backups.
+
+    Parameters:
+    -----------
+    arg1 : handler
+        handler of the container used to backup data.
+    """
+    def __init__(self, handler):
+        self.handler = handler
+
+    def is_writeable(self):
+        """
+        This method check if the container exists and can be use to add
+        data.
+        """
+        return self.handler.connected()
+
+    def connect(self):
+        """
+        This method will ensure than the container exist and that connection
+        with it is possible.
+        """
+        self.handler.create()
+
+    def add(self, path):
+        """
+        This method is to add the data to the container.
+        """
+        self.handler.copy(path)
+
+    def remove(self, path):
+        """
+        This method is to remove data from the container.
+        """
+        self.handler.delete(path)
+
+
+class DirHandler():
+    """
+    This class provide a handler for the container class to backup data in a
+    simple directory.
+    arg1 : string
+        Path to the directory.
+    """
+    def __init__(self, path):
+        self.path = os.path.abspath(path)
+
+    def is_writable(self):
+        """
+        Check if it is possible to write data in the directory.
+        """
+        return os.access(self.path, os.W_OK)
+
+    def connect(self):
+        """
+        Create the directory if it doesn't exist. The path shall be abs path.
+        """
+        os.makedirs(self.path, exist_ok=True)
+
+    def add(self):
+        """
+        Add files to the directory.
+        """
+
+    def remove(self):
+        """
+        Remove files from the directory.
+        """
+
+
 if __name__ == '__main__':
     logging.basicConfig(
         format='%(asctime)s : %(levelname)s : %(module)s : %(message)s',
