@@ -4,10 +4,38 @@
 The aim of this module is to serve data from the configuration file to other
  part of the application.
 """
+# pylint: disable=too-few-public-methods
 import json
 import os
 import sys
 import logging
+import shutil
+
+
+def decompose_path(path):
+    """
+    This function decompose the input path into its directory.
+
+    Parameters
+    ----------
+    path: string
+        The path to decompose
+
+    Return
+    ------
+    list
+        The list of directories composing the path. If the path is empty, the
+        list will be empty.
+    """
+    drive_path = os.path.splitdrive(path)
+    head, tail = os.path.split(drive_path[1])
+    dirs = []
+    while path != head:
+        if tail != "":
+            dirs.insert(0, tail)
+        path = head
+        head, tail = os.path.split(path)
+    return dirs
 
 
 class ConfigManager():
@@ -103,12 +131,6 @@ class Container():
         """
         self.handler.copy(path)
 
-    def remove(self, path):
-        """
-        This method is to remove data from the container.
-        """
-        self.handler.delete(path)
-
 
 class DirHandler():
     """
@@ -118,29 +140,74 @@ class DirHandler():
         Path to the directory.
     """
     def __init__(self, path):
-        self.path = os.path.abspath(path)
+        self.bck_path = os.path.abspath(path)
+        self.logger = logging.getLogger("".join(["backups.", __name__]))
 
     def is_writable(self):
         """
         Check if it is possible to write data in the directory.
         """
-        return os.access(self.path, os.W_OK)
+        return os.access(self.bck_path, os.W_OK)
 
     def connect(self):
         """
         Create the directory if it doesn't exist. The path shall be abs path.
         """
-        os.makedirs(self.path, exist_ok=True)
+        if os.path.isabs(self.bck_path):
+            os.makedirs(self.bck_path, exist_ok=True)
+            self.logger.info("The backup directory is : %s", self.bck_path)
+        else:
+            self.logger.warning("%s is not an absolute path", self.bck_path)
 
-    def add(self):
+    def add(self, path):
         """
-        Add files to the directory.
-        """
+        Add files recursively to the directory.
+        The hierarchy of the source path is copy with the target path as root.
 
-    def remove(self):
+        Parameters:
+        -----------
+        String
+            Path of the file or directory to copy.
+            If it is a directory, the entire tree will be copied.
         """
-        Remove files from the directory.
-        """
+        abs_path = os.path.abspath(path)
+        if os.path.isfile(abs_path):
+            base = os.path.split(abs_path)
+            dirs = decompose_path(base[0])
+        else:
+            dirs = decompose_path(abs_path)
+        target_path = self.bck_path
+        for directory in dirs:
+            target_path = os.path.join(target_path, directory)
+        try:
+            os.makedirs(target_path, exist_ok=True)
+        except PermissionError:
+            self.logger.warning(
+                "The following directory can not be backup: %s",
+                target_path)
+            return 1
+        try:
+            shutil.copy2(abs_path, target_path)
+        except IsADirectoryError:
+            try:
+                shutil.copytree(abs_path, target_path, dirs_exist_ok=True)
+            except PermissionError:
+                self.logger.warning(
+                    "The following directory can not be copied: %s",
+                    target_path)
+                return 1
+            except shutil.Error as err:
+                for fail_copy in err.args:
+                    self.logger.warning(
+                        "The following file can not be copied: %s",
+                        fail_copy[0])
+                return 1
+        except PermissionError:
+            self.logger.warning(
+                "The following file can not be copied: %s",
+                target_path)
+            return 1
+        return 0
 
 
 if __name__ == '__main__':

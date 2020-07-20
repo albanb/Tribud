@@ -8,6 +8,7 @@ Test of the config.py module.
 
 import os.path
 import unittest
+import shutil
 from context import model
 
 
@@ -52,16 +53,37 @@ class ConfigTest(unittest.TestCase):
     def test_item_search_archive_not_exist(self):
         json_config = model.ConfigManager(self.path2)
         result = json_config.item_search(("archive",))
-        self.assertEqual(result, None)
+        self.assertIsNone(result)
 
     def test_item_search_input_not_exist(self):
         json_config = model.ConfigManager(self.path2)
         result = json_config.item_search(("archive", "input"))
-        self.assertEqual(result, None)
+        self.assertIsNone(result)
 
     def tearDown(self):
         os.remove(self.path1)
         os.remove(self.path2)
+
+
+class DecomposePathTest(unittest.TestCase):
+    """
+    This class will test the decompose_path function
+    """
+    def decompose_path_test1(self):
+        result = model.decompose_path("home/test.sh")
+        self.assertEqual(result, ["home", "test.sh"])
+
+    def decompose_path_test2(self):
+        result = model.decompose_path("/etc/polkit-1/rules.d/")
+        self.assertEqual(result, ["etc", "polkit-1", "rules.d"])
+
+    def decompose_path_test3(self):
+        result = model.decompose_path("/")
+        self.assertEqual(result, [])
+
+    def decompose_path_test4(self):
+        result = model.decompose_path("")
+        self.assertEqual(result, [])
 
 
 class DirHandlerTest(unittest.TestCase):
@@ -69,28 +91,44 @@ class DirHandlerTest(unittest.TestCase):
     This class will test the DirHandler class.
     """
     def setUp(self):
-        self.path1 = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                  "test1"))
-        self.path2 = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                  "test2"))
+        self.basepath = os.path.abspath(os.path.dirname(__file__))
+        self.path1 = os.path.join(self.basepath, "test1")
+        self.path2 = os.path.join(self.basepath, "test2")
         os.mkdir(self.path2)
+        shutil.copy(__file__, self.path2)
+        shutil.copy(os.path.join(self.basepath, "context.py"), self.path2)
 
     def test_connect(self):
         directory = model.DirHandler(self.path1)
         directory.connect()
-        self.assertEqual(os.access(self.path1, os.F_OK), True)
+        self.assertTrue(os.access(self.path1, os.F_OK))
 
     def test_is_writable(self):
         directory = model.DirHandler(self.path2)
-        self.assertEqual(directory.is_writable(), True)
+        self.assertTrue(directory.is_writable())
+
+    def test_add_file(self):
+        directory = model.DirHandler(self.path1)
+        directory.connect()
+        directory.add(os.path.abspath(__file__))
+        self.assertTrue(os.path.isfile(
+            "".join([self.path1, os.path.abspath(__file__)])))
+
+    def test_add_directory(self):
+        directory = model.DirHandler(self.path1)
+        directory.connect()
+        directory.add(os.path.abspath(self.path2))
+        self.assertEqual(os.listdir(
+            "".join([self.path1, self.path2])),
+            ["context.py", "model_test.py"])
 
     def tearDown(self):
         try:
-            os.rmdir(self.path1)
+            shutil.rmtree(self.path1)
         except FileNotFoundError:
             pass
         try:
-            os.rmdir(self.path2)
+            shutil.rmtree(self.path2)
         except FileNotFoundError:
             pass
 
@@ -107,15 +145,29 @@ def suite_config_test():
     return unittest.TestSuite(map(ConfigTest, tests))
 
 
+def suite_decompose_path_test():
+    """
+    List of tests to run to test decompose_path function.
+    """
+    tests = ['decompose_path_test1',
+             'decompose_path_test2',
+             'decompose_path_test3',
+             'decompose_path_test4']
+    return unittest.TestSuite(map(DecomposePathTest, tests))
+
+
 def suite_dirhandler_test():
     """
     List of tests to run to test DirHandler class.
     """
     tests = ['test_connect',
-             'test_is_writable']
+             'test_is_writable',
+             'test_add_file',
+             'test_add_directory']
     return unittest.TestSuite(map(DirHandlerTest, tests))
 
 
 if __name__ == '__main__':
     unittest.TextTestRunner(verbosity=2).run(suite_config_test())
+    unittest.TextTestRunner(verbosity=2).run(suite_decompose_path_test())
     unittest.TextTestRunner(verbosity=2).run(suite_dirhandler_test())
