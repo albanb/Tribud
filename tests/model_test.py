@@ -119,8 +119,8 @@ class DirHandlerTest(unittest.TestCase):
         directory.connect()
         directory.add(os.path.abspath(self.path2))
         self.assertEqual(os.listdir(
-            "".join([self.path1, self.path2])),
-            ["context.py", "model_test.py"])
+            "".join([self.path1, self.path2])).sort(),
+            ["context.py", "model_test.py"].sort())
 
     def tearDown(self):
         try:
