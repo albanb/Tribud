@@ -40,8 +40,8 @@ def decompose_path(path):
 
 class ConfigManager():
     """
-    This class read the backup tool configuration and serve it to other
-    modules.
+    This class read the backup tool configuration, which is json file, and
+    serve it to other modules.
 
     Parameters
     ----------
@@ -111,25 +111,25 @@ class Container():
     def __init__(self, handler):
         self.handler = handler
 
-    def is_writeable(self):
+    def connected(self):
         """
         This method check if the container exists and can be use to add
         data.
         """
-        return self.handler.connected()
+        return self.handler.is_writable()
 
     def connect(self):
         """
         This method will ensure than the container exist and that connection
         with it is possible.
         """
-        self.handler.create()
+        self.handler.connect()
 
     def add(self, path):
         """
         This method is to add the data to the container.
         """
-        self.handler.copy(path)
+        self.handler.add(path)
 
 
 class DirHandler():
@@ -137,27 +137,27 @@ class DirHandler():
     This class provide a handler for the container class to backup data in a
     simple directory.
     arg1 : string
-        Path to the directory.
+        Path to the destination directory.
     """
     def __init__(self, path):
-        self.bck_path = os.path.abspath(path)
+        self.bckup_path = os.path.abspath(path)
         self.logger = logging.getLogger("".join(["backups.", __name__]))
 
     def is_writable(self):
         """
         Check if it is possible to write data in the directory.
         """
-        return os.access(self.bck_path, os.W_OK)
+        return os.access(self.bckup_path, os.W_OK)
 
     def connect(self):
         """
         Create the directory if it doesn't exist. The path shall be abs path.
         """
-        if os.path.isabs(self.bck_path):
-            os.makedirs(self.bck_path, exist_ok=True)
-            self.logger.info("The backup directory is : %s", self.bck_path)
+        if os.path.isabs(self.bckup_path):
+            os.makedirs(self.bckup_path, exist_ok=True)
+            self.logger.info("The backup directory is : %s", self.bckup_path)
         else:
-            self.logger.warning("%s is not an absolute path", self.bck_path)
+            self.logger.warning("%s is not an absolute path", self.bckup_path)
 
     def add(self, path):
         """
@@ -170,43 +170,38 @@ class DirHandler():
             Path of the file or directory to copy.
             If it is a directory, the entire tree will be copied.
         """
-        abs_path = os.path.abspath(path)
-        if os.path.isfile(abs_path):
-            base = os.path.split(abs_path)
+        src_path = os.path.abspath(path)
+        dst_path = self.bckup_path
+        if os.path.isfile(src_path):
+            base = os.path.split(src_path)
             dirs = decompose_path(base[0])
         else:
-            dirs = decompose_path(abs_path)
-        target_path = self.bck_path
+            dirs = decompose_path(src_path)
         for directory in dirs:
-            target_path = os.path.join(target_path, directory)
+            dst_path = os.path.join(dst_path, directory)
+        self._copytree(src_path, dst_path)
+        return 0
+
+    def _copytree(self, src, dst):
         try:
-            os.makedirs(target_path, exist_ok=True)
+            os.makedirs(dst, exist_ok=True)
         except PermissionError:
             self.logger.warning(
                 "The following directory can not be backup: %s",
-                target_path)
+                dst)
             return 1
-        try:
-            shutil.copy2(abs_path, target_path)
-        except IsADirectoryError:
-            try:
-                shutil.copytree(abs_path, target_path, dirs_exist_ok=True)
-            except PermissionError:
-                self.logger.warning(
-                    "The following directory can not be copied: %s",
-                    target_path)
-                return 1
-            except shutil.Error as err:
-                for fail_copy in err.args:
-                    self.logger.warning(
-                        "The following file can not be copied: %s",
-                        fail_copy[0])
-                return 1
-        except PermissionError:
-            self.logger.warning(
-                "The following file can not be copied: %s",
-                target_path)
-            return 1
+        if os.path.isfile(src):
+            shutil.copy2(src, dst)
+            return 0
+        with os.scandir(src) as itr:
+            entries = list(itr)
+        for srcentry in entries:
+            srcname = os.path.join(src, srcentry.name)
+            dstname = os.path.join(dst, srcentry.name)
+            if srcentry.is_dir():
+                self._copytree(srcname)
+            else:
+                shutil.copy2(srcname, dstname)
         return 0
 
 
@@ -217,6 +212,6 @@ if __name__ == '__main__':
     test = ConfigManager(
         os.path.abspath(os.path.join(os.path.dirname(__file__),
                                      '../../tests/data/config.json')))
-#        '../tests/data/config.json')))
+# '../tests/data/config.json')))
     for key, value in test.item_search(('archive',)).items():
         print(key, ': ', value)
