@@ -14,11 +14,16 @@ def main():
     Main entry point of the backup tool.
     """
     confpath = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                            '../tests/data/config.json'))
+                                            '../docs/config.json'))
     logger.info("Path to config: %s", confpath)
-    test = config.ConfigManager(confpath)
-    for key, value in test.item_search(('archive',)).items():
-        print(key, ': ', value)
+    tribudconfig = model.ConfigManager(confpath)
+    bckdir = tribudconfig.item_search(('archive', 'output'))
+    toarchive = tribudconfig.item_search(('archive', 'input'))
+    handler = model.DirHandler(bckdir)
+    backup = model.Container(handler)
+    backup.connect()
+    for files in toarchive:
+        backup.add(files)
     return 0
 
 

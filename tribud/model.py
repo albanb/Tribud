@@ -199,9 +199,11 @@ class DirHandler():
             srcname = os.path.join(src, srcentry.name)
             dstname = os.path.join(dst, srcentry.name)
             if srcentry.is_dir():
-                self._copytree(srcname)
-            else:
+                self._copytree(srcname, dstname)
+            elif srcentry.is_file():
                 shutil.copy2(srcname, dstname)
+            else:
+                return 1
         return 0
 
 
