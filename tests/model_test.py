@@ -69,19 +69,19 @@ class DecomposePathTest(unittest.TestCase):
     """
     This class will test the decompose_path function
     """
-    def decompose_path_test1(self):
+    def test_decompose_path_1(self):
         result = model.decompose_path("home/test.sh")
         self.assertEqual(result, ["home", "test.sh"])
 
-    def decompose_path_test2(self):
+    def test_decompose_path_2(self):
         result = model.decompose_path("/etc/polkit-1/rules.d/")
         self.assertEqual(result, ["etc", "polkit-1", "rules.d"])
 
-    def decompose_path_test3(self):
+    def test_decompose_path_3(self):
         result = model.decompose_path("/")
         self.assertEqual(result, [])
 
-    def decompose_path_test4(self):
+    def test_decompose_path_4(self):
         result = model.decompose_path("")
         self.assertEqual(result, [])
 
@@ -149,10 +149,10 @@ def suite_decompose_path_test():
     """
     List of tests to run to test decompose_path function.
     """
-    tests = ['decompose_path_test1',
-             'decompose_path_test2',
-             'decompose_path_test3',
-             'decompose_path_test4']
+    tests = ['test_decompose_path_1',
+             'test_decompose_path_2',
+             'test_decompose_path_3',
+             'test_decompose_path_4']
     return unittest.TestSuite(map(DecomposePathTest, tests))
 
 
