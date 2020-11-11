@@ -35,7 +35,7 @@ class ConfigTest(unittest.TestCase):
     def test_item_search_archive(self):
         json_config = model.ConfigManager(self.path1)
         result = json_config.item_search(("archive",))
-        self.assertEqual(result, {'input': ['data/config.json',
+        self.assertDictEqual(result, {'input': ['data/config.json',
                                             'data/test'],
                                   'output': 'data/tar'})
 
