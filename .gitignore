@@ -1,1 +1,4 @@
-env/
+.env/
+.git/
+.vscode/
+docs/config.json
