@@ -13,12 +13,13 @@ def main():
     """
     Main entry point of the backup tool.
     """
-    confpath = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                            '../docs/config.json'))
+    confpath = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../docs/config.json")
+    )
     logger.info("Path to config: %s", confpath)
     tribudconfig = model.ConfigManager(confpath)
-    bckdir = tribudconfig.item_search(('archive', 'output'))
-    toarchive = tribudconfig.item_search(('archive', 'input'))
+    bckdir = tribudconfig.item_search(("archive", "output"))
+    toarchive = tribudconfig.item_search(("archive", "input"))
     handler = model.DirHandler(bckdir)
     backup = model.Container(handler)
     backup.connect()
@@ -28,13 +29,14 @@ def main():
 
 
 # ---------- Main--------------------
-if __name__ == '__main__':
-    logger = logging.getLogger('backups')
+if __name__ == "__main__":
+    logger = logging.getLogger("backups")
     logger.setLevel(logging.DEBUG)
     fh = logging.StreamHandler()
     fh.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     fh.setFormatter(formatter)
     logger.addHandler(fh)
     main()

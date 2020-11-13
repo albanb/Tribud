@@ -38,7 +38,7 @@ def decompose_path(path):
     return dirs
 
 
-class ConfigManager():
+class ConfigManager:
     """
     This class read the backup tool configuration, which is json file, and
     serve it to other modules.
@@ -55,22 +55,19 @@ class ConfigManager():
         try:
             config_file = open(self.path)
         except IOError:
-            self.logger.critical(
-                "Config file doesn't exist: %s", self.path)
+            self.logger.critical("Config file doesn't exist: %s", self.path)
             sys.exit()
         else:
             with config_file:
                 try:
                     self.config = json.load(config_file)
                 except json.decoder.JSONDecodeError:
-                    self.logger.critical(
-                        "Config file format not JSON compliant")
+                    self.logger.critical("Config file format not JSON compliant")
                     sys.exit()
 
     def _item_search(self, config_part, keys):
         if keys[0] not in config_part:
-            self.logger.warning(
-                "%s key not present in the config file", keys[0])
+            self.logger.warning("%s key not present in the config file", keys[0])
             return None
         if len(keys) == 1:
             return config_part[keys[0]]
@@ -91,15 +88,14 @@ class ConfigManager():
             The configuration value.
         """
         if keys[0] not in self.config:
-            self.logger.warning(
-                "%s key not present in the config file", keys[0])
+            self.logger.warning("%s key not present in the config file", keys[0])
             return None
         if len(keys) == 1:
             return self.config[keys[0]]
         return self._item_search(self.config[keys[0]], keys[1:])
 
 
-class Container():
+class Container:
     """
     This class is the place to store the backups.
 
@@ -108,6 +104,7 @@ class Container():
     arg1 : handler
         handler of the container used to backup data.
     """
+
     def __init__(self, handler):
         self.handler = handler
 
@@ -132,13 +129,14 @@ class Container():
         self.handler.add(path)
 
 
-class DirHandler():
+class DirHandler:
     """
     This class provide a handler for the container class to backup data in a
     simple directory.
     arg1 : string
         Path to the destination directory.
     """
+
     def __init__(self, path):
         self.bckup_path = os.path.abspath(path)
         self.logger = logging.getLogger("".join(["backups.", __name__]))
@@ -186,9 +184,7 @@ class DirHandler():
         try:
             os.makedirs(dst, exist_ok=True)
         except PermissionError:
-            self.logger.warning(
-                "The following directory can not be backup: %s",
-                dst)
+            self.logger.warning("The following directory can not be backup: %s", dst)
             return 1
         if os.path.isfile(src):
             shutil.copy2(src, dst)
@@ -207,13 +203,18 @@ class DirHandler():
         return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(
-        format='%(asctime)s : %(levelname)s : %(module)s : %(message)s',
-        level=logging.DEBUG)
+        format="%(asctime)s : %(levelname)s : %(module)s : %(message)s",
+        level=logging.DEBUG,
+    )
     test = ConfigManager(
-        os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                     '../../tests/data/config.json')))
-# '../tests/data/config.json')))
-    for key, value in test.item_search(('archive',)).items():
-        print(key, ': ', value)
+        os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__), "../../tests/data/config.json"
+            )
+        )
+    )
+    # '../tests/data/config.json')))
+    for key, value in test.item_search(("archive",)).items():
+        print(key, ": ", value)

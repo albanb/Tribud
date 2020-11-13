@@ -10,7 +10,7 @@ import sys
 import unittest
 import model_test
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     suite1 = model_test.suite_config_test()
     suite2 = model_test.suite_decompose_path_test()
     suite3 = model_test.suite_dirhandler_test()
