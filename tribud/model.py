@@ -10,32 +10,7 @@ import os
 import sys
 import logging
 import shutil
-
-
-def decompose_path(path):
-    """
-    This function decompose the input path into its directory.
-
-    Parameters
-    ----------
-    path: string
-        The path to decompose
-
-    Return
-    ------
-    list
-        The list of directories composing the path. If the path is empty, the
-        list will be empty.
-    """
-    drive_path = os.path.splitdrive(path)
-    head, tail = os.path.split(drive_path[1])
-    dirs = []
-    while path != head:
-        if tail != "":
-            dirs.insert(0, tail)
-        path = head
-        head, tail = os.path.split(path)
-    return dirs
+import pathlib
 
 
 class ConfigManager:
@@ -138,24 +113,24 @@ class DirHandler:
     """
 
     def __init__(self, path):
-        self.bckup_path = os.path.abspath(path)
+        self.bckup_dst = pathlib.Path(os.path.abspath(path))
         self.logger = logging.getLogger("".join(["backups.", __name__]))
 
     def is_writable(self):
         """
         Check if it is possible to write data in the directory.
         """
-        return os.access(self.bckup_path, os.W_OK)
+        return os.access(self.bckup_dst, os.W_OK)
 
     def connect(self):
         """
         Create the directory if it doesn't exist. The path shall be abs path.
         """
-        if os.path.isabs(self.bckup_path):
-            os.makedirs(self.bckup_path, exist_ok=True)
-            self.logger.info("The backup directory is : %s", self.bckup_path)
+        if self.bckup_dst.is_absolute():
+            os.makedirs(self.bckup_dst, exist_ok=True)
+            self.logger.info("The backup directory is : %s", str(self.bckup_dst))
         else:
-            self.logger.warning("%s is not an absolute path", self.bckup_path)
+            self.logger.warning("%s is not an absolute path", str(self.bckup_dst))
 
     def add(self, path):
         """
@@ -168,38 +143,32 @@ class DirHandler:
             Path of the file or directory to copy.
             If it is a directory, the entire tree will be copied.
         """
-        src_path = os.path.abspath(path)
-        dst_path = self.bckup_path
-        if os.path.isfile(src_path):
-            base = os.path.split(src_path)
-            dirs = decompose_path(base[0])
-        else:
-            dirs = decompose_path(src_path)
+        src_path = pathlib.Path(path).resolve()
+        dst_path = pathlib.Path(self.bckup_dst)
+        dirs = src_path.parts[1:]
+        if src_path.is_file():
+            dirs = dirs[:-1]
         for directory in dirs:
-            dst_path = os.path.join(dst_path, directory)
+            dst_path = dst_path.joinpath(directory)
         self._copytree(src_path, dst_path)
         return 0
 
     def _copytree(self, src, dst):
-        try:
-            os.makedirs(dst, exist_ok=True)
-        except PermissionError:
-            self.logger.warning("The following directory can not be backup: %s", dst)
-            return 1
-        if os.path.isfile(src):
-            shutil.copy2(src, dst)
-            return 0
-        with os.scandir(src) as itr:
-            entries = list(itr)
-        for srcentry in entries:
-            srcname = os.path.join(src, srcentry.name)
-            dstname = os.path.join(dst, srcentry.name)
-            if srcentry.is_dir():
-                self._copytree(srcname, dstname)
-            elif srcentry.is_file():
-                shutil.copy2(srcname, dstname)
-            else:
+        if src.is_file():
+            try:
+                os.makedirs(dst, exist_ok=True)
+            except PermissionError:
+                self.logger.warning("The following directory can not be backup: %s", dst)
                 return 1
+            shutil.copy2(src, dst)
+        elif dst.exists():
+            for child in src.iterdir():
+                if child.is_file():
+                    shutil.copy2(child, dst)
+                else:
+                    self._copytree(child, dst.joinpath(child.name))
+        else:
+            shutil.copytree(src, dst)
         return 0
 
 
@@ -210,11 +179,8 @@ if __name__ == "__main__":
     )
     test = ConfigManager(
         os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__), "../../tests/data/config.json"
-            )
+            os.path.join(os.path.dirname(__file__), "../../tests/data/config.json")
         )
     )
-    # '../tests/data/config.json')))
     for key, value in test.item_search(("archive",)).items():
         print(key, ": ", value)

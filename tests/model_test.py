@@ -68,28 +68,6 @@ class ConfigTest(unittest.TestCase):
         os.remove(self.path2)
 
 
-class DecomposePathTest(unittest.TestCase):
-    """
-    This class will test the decompose_path function
-    """
-
-    def test_decompose_path_1(self):
-        result = model.decompose_path("home/test.sh")
-        self.assertEqual(result, ["home", "test.sh"])
-
-    def test_decompose_path_2(self):
-        result = model.decompose_path("/etc/polkit-1/rules.d/")
-        self.assertEqual(result, ["etc", "polkit-1", "rules.d"])
-
-    def test_decompose_path_3(self):
-        result = model.decompose_path("/")
-        self.assertEqual(result, [])
-
-    def test_decompose_path_4(self):
-        result = model.decompose_path("")
-        self.assertEqual(result, [])
-
-
 class DirHandlerTest(unittest.TestCase):
     """
     This class will test the DirHandler class.
@@ -154,19 +132,6 @@ def suite_config_test():
     return unittest.TestSuite(map(ConfigTest, tests))
 
 
-def suite_decompose_path_test():
-    """
-    List of tests to run to test decompose_path function.
-    """
-    tests = [
-        "test_decompose_path_1",
-        "test_decompose_path_2",
-        "test_decompose_path_3",
-        "test_decompose_path_4",
-    ]
-    return unittest.TestSuite(map(DecomposePathTest, tests))
-
-
 def suite_dirhandler_test():
     """
     List of tests to run to test DirHandler class.
@@ -177,5 +142,4 @@ def suite_dirhandler_test():
 
 if __name__ == "__main__":
     unittest.TextTestRunner(verbosity=2).run(suite_config_test())
-    unittest.TextTestRunner(verbosity=2).run(suite_decompose_path_test())
     unittest.TextTestRunner(verbosity=2).run(suite_dirhandler_test())
