@@ -139,11 +139,13 @@ class DirHandler:
 
         Parameters:
         -----------
-        String
-            Path of the file or directory to copy.
-            If it is a directory, the entire tree will be copied.
+        :param a: Path of the file or directory to copy
+                  If it is a directory, the entire tree will be copied
+        :type a: string
+        :return : full path of the backup file or directory
+        :rtype: string
         """
-        src_path = pathlib.Path(path).resolve()
+        src_path = pathlib.Path(os.path.abspath(path))
         dst_path = pathlib.Path(self.bckup_dst)
         dirs = src_path.parts[1:]
         if src_path.is_file():
@@ -151,24 +153,26 @@ class DirHandler:
         for directory in dirs:
             dst_path = dst_path.joinpath(directory)
         self._copytree(src_path, dst_path)
-        return 0
+        return dst_path
 
     def _copytree(self, src, dst):
-        if src.is_file():
+        if src.is_file() or src.is_symlink():
             try:
                 os.makedirs(dst, exist_ok=True)
             except PermissionError:
-                self.logger.warning("The following directory can not be backup: %s", dst)
+                self.logger.warning(
+                    "The following directory can not be backup: %s", dst
+                )
                 return 1
-            shutil.copy2(src, dst)
+            shutil.copy2(src, dst, follow_symlinks=False)
         elif dst.exists():
             for child in src.iterdir():
-                if child.is_file():
-                    shutil.copy2(child, dst)
+                if child.is_file() or child.is_symlink():
+                    shutil.copy2(child, dst, follow_symlinks=False)
                 else:
                     self._copytree(child, dst.joinpath(child.name))
         else:
-            shutil.copytree(src, dst)
+            shutil.copytree(src, dst, symlinks=True)
         return 0
 
 

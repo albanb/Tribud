@@ -24,16 +24,14 @@ class ConfigTest(unittest.TestCase):
         os.makedirs(os.path.dirname(self.path1), exist_ok=True)
         with open(self.path1, "w") as filep:
             filep.write(
-                '{"archive":{"input": ["data/config.json",\
-"data/test"], "output": "data/tar"}}'
+                '{"archive":{"input": ["data/config.json", "data/test"], "output": "data/tar"}}'
             )
         self.path2 = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "data/config2.json")
         )
         with open(self.path2, "w") as filep:
             filep.write(
-                '{"former": ["data/config.json",\
-"data/test"], "output": "data/tar"}'
+                '{"former": ["data/config.json", "data/test"], "output": "data/tar"}'
             )
 
     def test_item_search_archive(self):
@@ -80,6 +78,19 @@ class DirHandlerTest(unittest.TestCase):
         os.mkdir(self.path2)
         shutil.copy(__file__, self.path2)
         shutil.copy(os.path.join(self.basepath, "context.py"), self.path2)
+        self.symlink_path = os.path.join(self.basepath, "test2/symlink_to_file")
+        os.symlink(
+            os.path.join(self.path2, "context.py"),
+            self.symlink_path,
+        )
+        os.symlink(
+            os.path.join(self.basepath, "../tribud"),
+            os.path.join(self.basepath, "test2/symlink_to_directory"),
+        )
+        os.symlink(
+            os.path.join(self.basepath, "test2"),
+            os.path.join(self.basepath, "test2/recursive_symlink"),
+        )
 
     def test_connect(self):
         directory = model.DirHandler(self.path1)
@@ -98,13 +109,30 @@ class DirHandlerTest(unittest.TestCase):
             os.path.isfile("".join([self.path1, os.path.abspath(__file__)]))
         )
 
+    def test_add_symlink_file(self):
+        directory = model.DirHandler(self.path1)
+        directory.connect()
+        directory.add(os.path.abspath(self.symlink_path))
+        self.assertTrue(
+            os.path.isfile("".join([self.path1, os.path.abspath(self.symlink_path)]))
+            and os.path.islink(
+                "".join([self.path1, os.path.abspath(self.symlink_path)])
+            )
+        )
+
     def test_add_directory(self):
         directory = model.DirHandler(self.path1)
         directory.connect()
         directory.add(os.path.abspath(self.path2))
         self.assertEqual(
             os.listdir("".join([self.path1, self.path2])).sort(),
-            ["context.py", "model_test.py"].sort(),
+            [
+                "symlink_to_file",
+                "context.py",
+                "model_test.py",
+                "symlink_to_directory",
+                "recursive_symlink",
+            ].sort(),
         )
 
     def tearDown(self):
@@ -136,7 +164,13 @@ def suite_dirhandler_test():
     """
     List of tests to run to test DirHandler class.
     """
-    tests = ["test_connect", "test_is_writable", "test_add_file", "test_add_directory"]
+    tests = [
+        "test_connect",
+        "test_is_writable",
+        "test_add_file",
+        "test_add_symlink_file",
+        "test_add_directory",
+    ]
     return unittest.TestSuite(map(DirHandlerTest, tests))
 
 
