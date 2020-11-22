@@ -18,10 +18,8 @@ class ConfigManager:
     This class read the backup tool configuration, which is json file, and
     serve it to other modules.
 
-    Parameters
-    ----------
-    arg1: string
-        The path to the configuration file
+    :param path: the path to the configuration file
+    :type path: string
     """
 
     def __init__(self, path):
@@ -52,15 +50,11 @@ class ConfigManager:
         """
         Look for a dedicated config inside the configuration file.
 
-        Parameters:
-        -----------
-        Tuple
-            A tuple containing the "path" to the nested configuration value.
-
-        Return
-        ------
-        Variable
-            The configuration value.
+        :param keys: a tuple containing the "path" to the nested configuration value.
+        :type keys: tuple
+            
+        :return: the configuration value.
+        :rtype: variable
         """
         if keys[0] not in self.config:
             self.logger.warning("%s key not present in the config file", keys[0])
@@ -72,23 +66,42 @@ class ConfigManager:
 
 class Container:
     """
-    This class is the place to store the backups.
+    This class is the handler to manage all possible backup location.
+    
+    The class behave as a proxy to concrete handler to perform the actual backup.
+    Currently, only backup on the filesystem is managed.
 
-    Parameters:
-    -----------
-    arg1 : handler
-        handler of the container used to backup data.
+    :param handler: concrete handler to use to backup data.
+
+    :Example:
+
+    >>>#Create the concrete handler to manage backup location
+    >>>#Here it is a local filesystem directory
+    >>>directory_handler = DirHandler("/path/to/backup/dir")
+    >>>#Create the virtual handler to consistently manage backup location.
+    >>>backup = Container(directory_handler)
+    >>>#Connect to the container.
+    >>>backup.connect()
+    >>>#Check if the container is accessible and writeable
+    >>>if backup.is_connected():
+    >>>    print("Backup is possible")
+    >>>else:
+    >>>    print("Backup will not be done, the location 
+            is not accessible or not writable")
+    >>>#Add file or directory to the backup location
+    >>>backup.add("/file/to/save")
+
     """
 
     def __init__(self, handler):
         self.handler = handler
 
-    def connected(self):
+    def is_connected(self):
         """
         This method check if the container exists and can be use to add
         data.
         """
-        return self.handler.is_writable()
+        return self.handler.is_connected()
 
     def connect(self):
         """
@@ -107,24 +120,29 @@ class Container:
 class DirHandler:
     """
     This class provide a handler for the container class to backup data in a
-    simple directory.
-    arg1 : string
-        Path to the destination directory.
+    directory of the filesystem.
+
+    :param path: path to the backup directory.
+    :type path: string
+
     """
 
     def __init__(self, path):
         self.bckup_dst = pathlib.Path(os.path.abspath(path))
         self.logger = logging.getLogger("".join(["backups.", __name__]))
 
-    def is_writable(self):
+    def is_connected(self):
         """
         Check if it is possible to write data in the directory.
+
+        :return: indicate if it is possible to write in the DirHandler backup directory.
+        :rtype: boolean
         """
         return os.access(self.bckup_dst, os.W_OK)
 
     def connect(self):
         """
-        Create the directory if it doesn't exist. The path shall be abs path.
+        Create the backup directory if it doesn't exist. The path shall be abs path.
         """
         if self.bckup_dst.is_absolute():
             os.makedirs(self.bckup_dst, exist_ok=True)
@@ -134,14 +152,14 @@ class DirHandler:
 
     def add(self, path):
         """
-        Add files recursively to the directory.
-        The hierarchy of the source path is copy with the target path as root.
+        Add files of the path recursively to the backup directory.
 
-        Parameters:
-        -----------
-        :param a: Path of the file or directory to copy
+        The full hierarchy of the source path, starting from root, is copied to the 
+        backup directory.
+
+        :param path: path of the file or directory to copy
                   If it is a directory, the entire tree will be copied
-        :type a: string
+        :type path: string
         :return : full path of the backup file or directory
         :rtype: string
         """

@@ -97,9 +97,9 @@ class DirHandlerTest(unittest.TestCase):
         directory.connect()
         self.assertTrue(os.access(self.path1, os.F_OK))
 
-    def test_is_writable(self):
+    def test_is_connected(self):
         directory = model.DirHandler(self.path2)
-        self.assertTrue(directory.is_writable())
+        self.assertTrue(directory.connected())
 
     def test_add_file(self):
         directory = model.DirHandler(self.path1)
@@ -166,7 +166,7 @@ def suite_dirhandler_test():
     """
     tests = [
         "test_connect",
-        "test_is_writable",
+        "test_is_connected",
         "test_add_file",
         "test_add_symlink_file",
         "test_add_directory",
