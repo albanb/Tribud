@@ -99,7 +99,7 @@ class DirHandlerTest(unittest.TestCase):
 
     def test_is_connected(self):
         directory = model.DirHandler(self.path2)
-        self.assertTrue(directory.connected())
+        self.assertTrue(directory.is_connected())
 
     def test_add_file(self):
         directory = model.DirHandler(self.path1)
