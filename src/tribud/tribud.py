@@ -8,7 +8,7 @@ import os.path
 import logging
 
 if __package__ == "":
-    import model
+    import model  # pylint: disable=import-error
 else:
     from tribud import model
 
@@ -19,7 +19,7 @@ def main():
     """
     logger = logging.getLogger("backups")
     logger.setLevel(logging.DEBUG)
-    fh = logging.StreamHandler()
+    fh = logging.StreamHandler()  # pylint: disable=invalid-name
     fh.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
