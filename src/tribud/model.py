@@ -52,7 +52,7 @@ class ConfigManager:
 
         :param keys: a tuple containing the "path" to the nested configuration value.
         :type keys: tuple
-            
+
         :return: the configuration value.
         :rtype: variable
         """
@@ -67,7 +67,7 @@ class ConfigManager:
 class Container:
     """
     This class is the handler to manage all possible backup location.
-    
+
     The class behave as a proxy to concrete handler to perform the actual backup.
     Currently, only backup on the filesystem is managed.
 
@@ -86,7 +86,7 @@ class Container:
     >>>if backup.is_connected():
     >>>    print("Backup is possible")
     >>>else:
-    >>>    print("Backup will not be done, the location 
+    >>>    print("Backup will not be done, the location
             is not accessible or not writable")
     >>>#Add file or directory to the backup location
     >>>backup.add("/file/to/save")
@@ -154,7 +154,7 @@ class DirHandler:
         """
         Add files of the path recursively to the backup directory.
 
-        The full hierarchy of the source path, starting from root, is copied to the 
+        The full hierarchy of the source path, starting from root, is copied to the
         backup directory.
 
         :param path: path of the file or directory to copy
