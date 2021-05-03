@@ -6,11 +6,24 @@ A backup tool to save files on a local or remote dedicated location.
 
 import os.path
 import logging
+import appdirs
 
 if __package__ == "":
     import model  # pylint: disable=import-error
+    __appname__ = "tribud"
 else:
-    from tribud import model
+    from tribud import model, __appname__   # pylint: disable=import-self
+
+
+CONFIG_FILE = "config.json"
+
+
+def application_path():
+    """
+    Create object to find main OS directory for config, data, cache... Use appdirs
+    package.
+    """
+    return appdirs.AppDirs(__appname__)
 
 
 def main():
@@ -26,9 +39,8 @@ def main():
     )
     fh.setFormatter(formatter)
     logger.addHandler(fh)
-    confpath = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../../docs/config.json")
-    )
+    app_dirs = application_path()
+    confpath = os.path.join(app_dirs.user_config_dir, CONFIG_FILE)
     logger.info("Path to config: %s", confpath)
     tribudconfig = model.ConfigManager(confpath)
     bckdir = tribudconfig.item_search(("archive", "output"))
