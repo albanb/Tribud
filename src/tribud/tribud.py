@@ -43,7 +43,7 @@ def main():
     confpath = os.path.join(app_dirs.user_config_dir, CONFIG_FILE)
     logger.info("Path to config: %s", confpath)
     tribudconfig = model.ConfigManager(confpath)
-    bckdir = tribudconfig.item_search(("archive", "output"))
+    bckdir = tribudconfig.item_search(("archive", "output", "dir"))
     toarchive = tribudconfig.item_search(("archive", "input"))
     handler = model.DirHandler(bckdir)
     backup = model.Container(handler)
