@@ -53,8 +53,12 @@ class _ConfOpt:
         :rtype: bool
         """
         if self.parent != self.desc[1]:
+            self.logger.critical("%s option has not valid parent.", self.key)
             return False
         if not isinstance(self.value, self.desc[0]):
+            self.logger.critical(
+                "The value of the option %s is not compliant with its type.", self.key
+            )
             return False
         return self.confopt_dict()
 
@@ -69,8 +73,13 @@ class _ConfOpt:
         if self.desc[2] == "dict":
             res = True
             for conf_key, conf_value in self.value.items():
-                conf_opt = _ConfOpt(self.key, conf_key, conf_value, self.allowed)
-                res = conf_opt.check() and res
+                if isinstance(conf_value, list):
+                    for element in conf_value:
+                        conf_opt = _ConfOpt(self.key, conf_key, element, self.allowed)
+                        res = conf_opt.check() and res
+                else:
+                    conf_opt = _ConfOpt(self.key, conf_key, conf_value, self.allowed)
+                    res = conf_opt.check() and res
             return res
         return self.confopt_path()
 
@@ -147,8 +156,13 @@ class ConfigManager:
         """
         res = True
         for conf_key, conf_value in self.config.items():
-            conf_opt = _ConfOpt(None, conf_key, conf_value, allowed_keys)
-            res = conf_opt.check() and res
+            if isinstance(conf_value, list):
+                for element in conf_value:
+                    conf_opt = _ConfOpt(None, conf_key, element, allowed_keys)
+                    res = conf_opt.check() and res
+            else:
+                conf_opt = _ConfOpt(None, conf_key, conf_value, allowed_keys)
+                res = conf_opt.check() and res
         return res
 
     def _item_search(self, config_part, keys):
