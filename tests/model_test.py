@@ -31,33 +31,34 @@ class ConfigTest(unittest.TestCase):
         )
         with open(self.path2, "w") as filep:
             filep.write(
-                '{"former": ["data/config.json", "data/test"], "output": "data/tar"}'
+                '{"archive": ["data/config.json", "data/test"], "output": "data/tar"}'
             )
+        self.mandatory_keys = (("archive", "input"), ("archive", "output"))
 
     def test_item_search_archive(self):
-        json_config = model.ConfigManager(self.path1)
+        json_config = model.ConfigManager(self.path1, self.mandatory_keys)
         result = json_config.item_search(("archive",))
         self.assertDictEqual(
             result, {"input": ["data/config.json", "data/test"], "output": "data/tar"}
         )
 
     def test_item_search_input(self):
-        json_config = model.ConfigManager(self.path1)
+        json_config = model.ConfigManager(self.path1, self.mandatory_keys)
         result = json_config.item_search(("archive", "input"))
         self.assertEqual(result, ["data/config.json", "data/test"])
 
     def test_item_search_output(self):
-        json_config = model.ConfigManager(self.path1)
+        json_config = model.ConfigManager(self.path1, self.mandatory_keys)
         result = json_config.item_search(("archive", "output"))
         self.assertEqual(result, "data/tar")
 
-    def test_item_search_archive_not_exist(self):
-        json_config = model.ConfigManager(self.path2)
-        result = json_config.item_search(("archive",))
+    def test_item_search_log_not_exist(self):
+        json_config = model.ConfigManager(self.path1, self.mandatory_keys)
+        result = json_config.item_search(("log",))
         self.assertIsNone(result)
 
     def test_item_search_input_not_exist(self):
-        json_config = model.ConfigManager(self.path2)
+        json_config = model.ConfigManager(self.path2, self.mandatory_keys)
         result = json_config.item_search(("archive", "input"))
         self.assertIsNone(result)
 
@@ -154,7 +155,7 @@ def suite_config_test():
         "test_item_search_archive",
         "test_item_search_input",
         "test_item_search_output",
-        "test_item_search_archive_not_exist",
+        "test_item_search_log_not_exist",
         "test_item_search_input_not_exist",
     ]
     return unittest.TestSuite(map(ConfigTest, tests))

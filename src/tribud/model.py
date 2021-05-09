@@ -39,10 +39,11 @@ class _ConfOpt:
         self.value = opt_value
         try:
             self.desc = allowed[opt_key]
-        except KeyError:
+        except KeyError as err:
             self.logger.critical(
                 "%s is not allowed. Configuration file not valid", opt_key
             )
+            raise err
         self.allowed = allowed
 
     def check(self):
@@ -53,13 +54,13 @@ class _ConfOpt:
         :rtype: bool
         """
         if self.parent != self.desc[1]:
-            self.logger.critical("%s option has not valid parent.", self.key)
-            return False
+            self.logger.critical("%s option has not a valid parent.", self.key)
+            raise KeyError("Key not valid, wrong parent.", self.key)
         if not isinstance(self.value, self.desc[0]):
             self.logger.critical(
                 "The value of the option %s is not compliant with its type.", self.key
             )
-            return False
+            raise ValueError("Value type not expected.", self.key, self.desc[0])
         return self.confopt_dict()
 
     def confopt_dict(self):
@@ -93,7 +94,8 @@ class _ConfOpt:
         """
         if self.desc[2] == "path":
             path = pathlib.Path(self.value)
-            return path.is_absolute()
+            if not path.is_absolute():
+                raise ValueError("This is not an absolute valid path.", self.key)
         return self.default_handler()
 
     def default_handler(self):
@@ -126,22 +128,22 @@ class ConfigManager:
         self.logger = logging.getLogger("".join([__appname__, ".", __name__]))
         try:
             config_file = open(self.path)
-        except IOError:
+        except IOError as err:
             self.logger.critical("Config file doesn't exist: %s", self.path)
-            sys.exit()
+            raise err
         else:
             with config_file:
                 try:
                     self.config = json.load(config_file)
-                except json.decoder.JSONDecodeError:
+                except json.decoder.JSONDecodeError as err:
                     self.logger.critical("Config file format not JSON compliant")
-                    sys.exit()
+                    raise err
         for keys in mandatory_keys:
             if self.item_search(keys) is None:
                 self.logger.critical(
                     "Mandatory keys %s not in the configuration file", keys
                 )
-                sys.exit()
+                raise KeyError("Missing mandatory key in configuration file", keys)
 
     def sanitize(self, allowed_keys):
         """
@@ -326,12 +328,15 @@ if __name__ == "__main__":
         format="%(asctime)s : %(levelname)s : %(module)s : %(message)s",
         level=logging.DEBUG,
     )
-    test = ConfigManager(
-        os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../../docs/config.json")
-        ),
-        (("archive", "input"), ("archive", "output")),
-    )
+    try:
+        test = ConfigManager(
+            os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "../../docs/config.json")
+            ),
+            (("archive", "input"), ("archive", "output")),
+        )
+    except (IOError, json.decoder.JSONDecodeError):
+        sys.exit()
 
     CONFIG_KEYS_ALLOWED = {
         # key: (type of key, parent key, sanity function)
@@ -341,6 +346,9 @@ if __name__ == "__main__":
         "dir": (str, "output", "path"),
         "log": (str, None, None),
     }
-    print("sanitize: ", test.sanitize(CONFIG_KEYS_ALLOWED))
+    try:
+        print("sanitize: ", test.sanitize(CONFIG_KEYS_ALLOWED))
+    except KeyError, ValueError:
+        sys.exit()
     for key, value in test.item_search(("archive",)).items():
         print(key, ": ", value)
