@@ -13,18 +13,108 @@ import shutil
 import pathlib
 
 
+if __package__ == "" or __package__ is None:
+    __appname__ = "tribud"
+
+
+class _ConfOpt:
+    """
+    This class described one config options with its description to be able to check
+    that the configuration option is compliant with its specification.
+
+    :param opt_parent: parent option in the configuration file. None if no parent.
+    :type opt_parent: str
+    :param opt_key: configuration option store in this object.
+    :type opt_key: str
+    :param opt_value: associated value of the configuration option.
+    :type opt_value: misc
+    :param allowed: dict describing the allowed configuration option.
+    :type allowed: dict
+    """
+
+    def __init__(self, opt_parent, opt_key, opt_value, allowed):
+        self.logger = logging.getLogger("".join([__appname__, ".", __name__]))
+        self.parent = opt_parent
+        self.key = opt_key
+        self.value = opt_value
+        try:
+            self.desc = allowed[opt_key]
+        except KeyError:
+            self.logger.critical(
+                "%s is not allowed. Configuration file not valid", opt_key
+            )
+        self.allowed = allowed
+
+    def check(self):
+        """
+        Check one config option to ensure that it is a valid one.
+
+        :return: True if option is valid, False if not
+        :rtype: bool
+        """
+        if self.parent != self.desc[1]:
+            return False
+        if not isinstance(self.value, self.desc[0]):
+            return False
+        return self.confopt_dict()
+
+    def confopt_dict(self):
+        """
+        This method check the validity of dict config option. It it is not a dict
+        option, the option is pass through the next handler.
+
+        :return: True if option is valid, False if not.
+        :rtype: bool
+        """
+        if self.desc[2] == "dict":
+            res = True
+            for conf_key, conf_value in self.value.items():
+                conf_opt = _ConfOpt(self.key, conf_key, conf_value, self.allowed)
+                res = conf_opt.check() and res
+            return res
+        return self.confopt_path()
+
+    def confopt_path(self):
+        """
+        This method check the validity of path config option. It it is not a valid path
+        option, the option is pass through the next handler.
+
+        :return: True if option is valid, False if not.
+        :rtype: bool
+        """
+        if self.desc[2] == "path":
+            path = pathlib.Path(self.value)
+            return path.is_absolute()
+        return self.default_handler()
+
+    def default_handler(self):
+        """
+        This method is the default option validity handler. If reach, it means that the
+        option validity cannot be check, and a message is raised.
+
+        :return: always return true as the option cannot be check.
+        :rtype: bool
+        """
+        self.logger.warning(
+            "The config option %s/%s content cannot be check.", self.parent, self.key
+        )
+        return True
+
+
 class ConfigManager:
     """
     This class read the backup tool configuration, which is json file, and
     serve it to other modules.
 
-    :param path: the path to the configuration file
+    :param path: the path to the configuration file.
     :type path: string
+    :param mandatory_keys: all mandatory keys that have to be in the config file.
+    :type mandatory_keys: tuple
     """
 
-    def __init__(self, path):
+    def __init__(self, path, mandatory_keys):
         self.path = path
-        self.logger = logging.getLogger("".join(["backups.", __name__]))
+        self.logger = logging.getLogger("".join([__appname__, ".", __name__]))
         try:
             config_file = open(self.path)
         except IOError:
@@ -37,6 +127,29 @@ class ConfigManager:
                 except json.decoder.JSONDecodeError:
                     self.logger.critical("Config file format not JSON compliant")
                     sys.exit()
+        for keys in mandatory_keys:
+            if self.item_search(keys) is None:
+                self.logger.critical(
+                    "Mandatory keys %s not in the configuration file", keys
+                )
+                sys.exit()
+
+    def sanitize(self, allowed_keys):
+        """
+        Check config file to ensure that all options are valid.
+
+        :param allowed_keys: a dictionnary containing the description of all valid keys
+        for the config file.
+        :type keys: dict
+
+        :return: config file valid or not.
+        :rtype: boolean
+        """
+        res = True
+        for conf_key, conf_value in self.config.items():
+            conf_opt = _ConfOpt(None, conf_key, conf_value, allowed_keys)
+            res = conf_opt.check() and res
+        return res
 
     def _item_search(self, config_part, keys):
         if keys[0] not in config_part:
@@ -129,7 +242,7 @@ class DirHandler:
 
     def __init__(self, path):
         self.bckup_dst = pathlib.Path(os.path.abspath(path))
-        self.logger = logging.getLogger("".join(["backups.", __name__]))
+        self.logger = logging.getLogger("".join([__appname__, ".", __name__]))
 
     def is_connected(self):
         """
@@ -201,8 +314,19 @@ if __name__ == "__main__":
     )
     test = ConfigManager(
         os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../../tests/data/config.json")
-        )
+            os.path.join(os.path.dirname(__file__), "../../docs/config.json")
+        ),
+        (("archive", "input"), ("archive", "output")),
     )
+
+    CONFIG_KEYS_ALLOWED = {
+        # key: (type of key, parent key, sanity function)
+        "archive": (dict, None, "dict"),
+        "input": (str, "archive", "path"),
+        "output": (dict, "archive", "dict"),
+        "dir": (str, "output", "path"),
+        "log": (str, None, None),
+    }
+    print("sanitize: ", test.sanitize(CONFIG_KEYS_ALLOWED))
     for key, value in test.item_search(("archive",)).items():
         print(key, ": ", value)
