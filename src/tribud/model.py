@@ -96,6 +96,7 @@ class _ConfOpt:
             path = pathlib.Path(self.value)
             if not path.is_absolute():
                 raise ValueError("This is not an absolute valid path.", self.key)
+            return True
         return self.default_handler()
 
     def default_handler(self):
@@ -348,7 +349,7 @@ if __name__ == "__main__":
     }
     try:
         print("sanitize: ", test.sanitize(CONFIG_KEYS_ALLOWED))
-    except KeyError, ValueError:
+    except (KeyError, ValueError):
         sys.exit()
     for key, value in test.item_search(("archive",)).items():
         print(key, ": ", value)
