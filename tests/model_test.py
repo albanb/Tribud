@@ -13,6 +13,52 @@ import json
 from context import model
 
 
+class ConfOptTest(unittest.TestCase):
+    """
+    This class will test the ConfOpt class
+    """
+
+    def test_getvalue(self):
+        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        self.assertEqual(option.get_value(), "/home/user")
+
+    def test_iskey(self):
+        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        self.assertTrue(option.is_key(("archive", "output", "dir")))
+
+    def test_not_iskey(self):
+        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        self.assertFalse(option.is_key(("archive", "output", "log")))
+
+    def test_iskey_with_none(self):
+        option = model.ConfOpt(None, "dir", "/home/user")
+        self.assertTrue(option.is_key(("dir",)))
+
+    def test_check(self):
+        option = model.ConfOpt(None, "dir", "/home/user")
+        self.assertTrue(option.check((str, (), model.path_check)))
+
+    def test_check2(self):
+        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        self.assertTrue(option.check((str, ("archive", "output"), model.path_check)))
+
+    def test_check_wrong_type(self):
+        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        self.assertFalse(option.check((int, ("archive", "output"), model.path_check)))
+
+    def test_check_wrong_parent(self):
+        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        self.assertFalse(option.check((str, ("archive", "input"), model.path_check)))
+
+    def test_check_wrong_parent2(self):
+        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        self.assertFalse(option.check((str, (), model.path_check)))
+
+    def test_check_wrong_path(self):
+        option = model.ConfOpt(("archive", "output"), "dir", "home/user")
+        self.assertFalse(option.check((str, ("archive", "output"), model.path_check)))
+
+
 #  pylint: disable=too-many-instance-attributes
 class ConfigTest(unittest.TestCase):
     """
@@ -213,6 +259,25 @@ class DirHandlerTest(unittest.TestCase):
             pass
 
 
+def suite_confopt_test():
+    """
+    List of tests to run to test ConfOpt class.
+    """
+    tests = [
+            "test_getvalue",
+            "test_iskey",
+            "test_not_iskey",
+            "test_iskey_with_none",
+            "test_check",
+            "test_check2",
+            "test_check_wrong_type",
+            "test_check_wrong_parent",
+            "test_check_wrong_parent2",
+            "test_check_wrong_path",
+            ]
+    return unittest.TestSuite(map(ConfOptTest, tests))
+
+
 def suite_config_test():
     """
     List of tests to run to test Config class.
@@ -247,5 +312,6 @@ def suite_dirhandler_test():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner(verbosity=2).run(suite_config_test())
+    # unittest.TextTestRunner(verbosity=2).run(suite_config_test())
+    unittest.TextTestRunner(verbosity=2).run(suite_confopt_test())
     unittest.TextTestRunner(verbosity=2).run(suite_dirhandler_test())

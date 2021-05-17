@@ -17,6 +17,85 @@ if __package__ == "" or __package__ is None:
     __appname__ = "tribud"
 
 
+def path_check(path_to_check):
+    """
+    Check that the path given as a parameter is an valid absolute path.
+
+    :param path_to_check: string which as to be checked
+    :type path_to_check: str
+    :return: True if it is a valid absolute path, False otherwise
+    :rtype: boolean
+    """
+    return True
+
+
+class ConfOpt:
+    """
+    This class described one config options with its description to be able to check
+    that the configuration option is compliant with its specification.
+
+    :param opt_parent: parent option in the configuration file. None if no parent.
+    :type opt_parent: list
+    :param opt_key: configuration option store in this object.
+    :type opt_key: str
+    :param opt_value: associated value of the configuration option.
+    :type opt_value: misc
+    """
+
+    def __init__(self, opt_parent, opt_key, opt_value):
+        self.logger = logging.getLogger("".join([__appname__, ".", __name__]))
+        if not isinstance(opt_parent, tuple):
+            self.option = (opt_key,)
+        else:
+            self.option = opt_parent + (opt_key,)
+        self.value = opt_value
+
+    def get_value(self):
+        """
+        Get the value of this configuration option.
+
+        :return: configuration option value
+        :rtype: misc
+        """
+        return self.value
+
+    def is_key(self, option):
+        """
+        Check if this option is the one given as parameter.
+
+        :param option: option to be looking for
+        :type option: tuple
+        :return: True if this the configuration option, False otherwise
+        :rtype: boolean
+        """
+        if option[:-1] == self.option[:-1] and option[-1] == self.option[-1]:
+            return True
+        return False
+
+    def check(self, option_definition):
+        """
+        Check if the option is compliant with the definition given as a parameter.
+
+        :param option_definition: definition of the configuration option to be check.
+        The form of the definition is: (option type, parent, check function) with:
+        option type: str, tuple, dict...
+        parent: path to the option when nested in the configuration file as a tuple.
+        If the option is at the first hierarchy level, an empty tuple shall be used.
+        check function: callable to use to check the option. Existing functions are:
+            - path_check: check that the option is a valid absolute path
+        :type option_definition: tuple
+        :return: True if option is valid, False otherwise
+        :rtype: boolean
+        """
+        if (
+            isinstance(self.value, option_definition[0])
+            and option_definition[1] == self.option[:-1]
+            and option_definition[2](self.value)
+        ):
+            return True
+        return False
+
+
 class _ConfOpt:
     """
     This class described one config options with its description to be able to check
