@@ -26,6 +26,9 @@ def path_check(path_to_check):
     :return: True if it is a valid absolute path, False otherwise
     :rtype: boolean
     """
+    path = pathlib.Path(path_to_check)
+    if not path.is_absolute():
+        return False
     return True
 
 
@@ -84,16 +87,17 @@ class ConfOpt:
         check function: callable to use to check the option. Existing functions are:
             - path_check: check that the option is a valid absolute path
         :type option_definition: tuple
-        :return: True if option is valid, False otherwise
-        :rtype: boolean
+        :return: 1 if option is valid, 2 if type is wrong, 3 if parent is wrong,
+        4 if dedicated check is wrong
+        :rtype: integer
         """
-        if (
-            isinstance(self.value, option_definition[0])
-            and option_definition[1] == self.option[:-1]
-            and option_definition[2](self.value)
-        ):
-            return True
-        return False
+        if isinstance(self.value, option_definition[0]):
+            if option_definition[1] == self.option[:-1]:
+                if option_definition[2](self.value):
+                    return 1
+                return 4
+            return 3
+        return 2
 
 
 class _ConfOpt:

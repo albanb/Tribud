@@ -40,23 +40,29 @@ class ConfOptTest(unittest.TestCase):
 
     def test_check2(self):
         option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
-        self.assertTrue(option.check((str, ("archive", "output"), model.path_check)))
+        self.assertEqual(
+            option.check((str, ("archive", "output"), model.path_check)), 1
+        )
 
     def test_check_wrong_type(self):
         option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
-        self.assertFalse(option.check((int, ("archive", "output"), model.path_check)))
+        self.assertEqual(
+            option.check((int, ("archive", "output"), model.path_check)), 2
+        )
 
     def test_check_wrong_parent(self):
         option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
-        self.assertFalse(option.check((str, ("archive", "input"), model.path_check)))
+        self.assertEqual(option.check((str, ("archive", "input"), model.path_check)), 3)
 
     def test_check_wrong_parent2(self):
         option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
-        self.assertFalse(option.check((str, (), model.path_check)))
+        self.assertEqual(option.check((str, (), model.path_check)), 3)
 
     def test_check_wrong_path(self):
         option = model.ConfOpt(("archive", "output"), "dir", "home/user")
-        self.assertFalse(option.check((str, ("archive", "output"), model.path_check)))
+        self.assertEqual(
+            option.check((str, ("archive", "output"), model.path_check)), 4
+        )
 
 
 #  pylint: disable=too-many-instance-attributes
@@ -97,9 +103,7 @@ class ConfigTest(unittest.TestCase):
             os.path.join(os.path.dirname(__file__), "data/config2.json")
         )
         with open(self.path2, "w") as filep:
-            filep.write(
-                '{"archive": "data/config.json", "output": "data/tar"}'
-            )
+            filep.write('{"archive": "data/config.json", "output": "data/tar"}')
         self.mandatory_keys2 = (("archive",), ("output",))
         self.path3 = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "data/config3.json")
@@ -264,17 +268,17 @@ def suite_confopt_test():
     List of tests to run to test ConfOpt class.
     """
     tests = [
-            "test_getvalue",
-            "test_iskey",
-            "test_not_iskey",
-            "test_iskey_with_none",
-            "test_check",
-            "test_check2",
-            "test_check_wrong_type",
-            "test_check_wrong_parent",
-            "test_check_wrong_parent2",
-            "test_check_wrong_path",
-            ]
+        "test_getvalue",
+        "test_iskey",
+        "test_not_iskey",
+        "test_iskey_with_none",
+        "test_check",
+        "test_check2",
+        "test_check_wrong_type",
+        "test_check_wrong_parent",
+        "test_check_wrong_parent2",
+        "test_check_wrong_path",
+    ]
     return unittest.TestSuite(map(ConfOptTest, tests))
 
 
