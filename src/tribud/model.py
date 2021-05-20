@@ -32,6 +32,33 @@ def path_check(path_to_check):
     return True
 
 
+def flatten(dictio, output=None, parent=()):
+    """
+    Function to flatten a nested dictionnary.
+
+    :param dictio: nested dictionnary to flatten
+    :type dictio: dict
+    :param output: list containing the flatten dictionnary. In the first call,
+    the output should not be set as the flatten dictionnary is given as return.
+    Each item of the list has the form: ((root, parent1, parent2...), last key, value)
+    :type output: list
+    :param parent: tuple containing the parent of the current key to be flatten
+    :type parent: tuple
+    :return: list containing the flatten dictionnary. each item of the list has
+    the form: ((root, parent1, parent2...), last key, value)
+    :rtype: list
+    """
+    if output is None:
+        output = []
+    for cle, valeur in dictio.items():
+        if isinstance(valeur, dict):
+            new_parent = parent + (cle,)
+            flatten(valeur, output, new_parent)
+        else:
+            output.append((parent, cle, valeur))
+    return output
+
+
 class ConfOpt:
     """
     This class described one config options with its description to be able to check
@@ -98,6 +125,52 @@ class ConfOpt:
                 return 4
             return 3
         return 2
+
+
+class ConfigManager:
+    """
+    This class read the backup tool configuration, which is json file, and serve it to
+    other modules.
+    """
+
+    def __init__(self, path):
+        """
+        :param path:  the path to the configuration file.
+        :type path: string
+        """
+
+        self._path = path
+        self._options = []
+        self.logger = logging.getLogger("".join([__appname__, ".", __name__]))
+        try:
+            config_file = open(self._path)
+        except IOError as err:
+            self.logger.critical("Config file doesn't exist: %s", self._path)
+            raise err
+        else:
+            with config_file:
+                try:
+                    config = json.load(config_file)
+                except json.decoder.JSONDecodeError as err:
+                    self.logger.critical("Config file format not JSON compliant")
+                    raise err
+        for option in flatten(config):
+            self._options.append(ConfOpt(option[0], option[1], option[2]))
+
+    def sanitize(self, keys_definition):
+        """
+        This method will check all the options to send all non compliant configurations.
+
+        # key: (type of key, parent key, sanity function)
+        :param keys_definition: dictionnary defining all options. Each item of the
+        dictionnary shall have the following form:
+        key: (boolean to define if key is mandatory or not,
+              (type of key, parent key, sanity function))
+        :type keys_definition: dictionnary
+        :returns: True if options are compliant, False otherwise
+        :rtype: boolean
+        """
+        pass
 
 
 class _ConfOpt:
@@ -196,7 +269,7 @@ class _ConfOpt:
         return True
 
 
-class ConfigManager:
+class ConfigManagerb:
     """
     This class read the backup tool configuration, which is json file, and
     serve it to other modules.
