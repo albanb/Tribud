@@ -17,6 +17,24 @@ if __package__ == "" or __package__ is None:
     __appname__ = "tribud"
 
 
+def list_to_elt(function):
+    """
+    Decorator to transform argument list to call for each elements of the list.
+    """
+
+    def wrapper_list_to_elt(arg):
+        if not isinstance(arg, list):
+            return function(arg)
+        else:
+            ret = True
+            for elt in arg:
+                ret = ret and function(elt)
+            return ret
+
+    return wrapper_list_to_elt
+
+
+@list_to_elt
 def path_check(path_to_check):
     """
     Check that the path given as a parameter is an valid absolute path.
@@ -72,6 +90,11 @@ class ConfOpt:
     :type opt_value: misc
     """
 
+    CHECK_OK = 1
+    CHECK_NOK_TYPE = 2
+    CHECK_NOK_PARENT = 3
+    CHECK_NOK_SPECIFIC = 4
+
     def __init__(self, opt_parent, opt_key, opt_value):
         self.logger = logging.getLogger("".join([__appname__, ".", __name__]))
         if not isinstance(opt_parent, tuple):
@@ -121,10 +144,10 @@ class ConfOpt:
         if isinstance(self.value, option_definition[0]):
             if option_definition[1] == self.option[:-1]:
                 if option_definition[2](self.value):
-                    return 1
-                return 4
-            return 3
-        return 2
+                    return ConfOpt.CHECK_OK
+                return ConfOpt.CHECK_NOK_SPECIFIC
+            return ConfOpt.CHECK_NOK_PARENT
+        return ConfOpt.CHECK_NOK_TYPE
 
 
 class ConfigManager:

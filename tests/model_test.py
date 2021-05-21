@@ -25,6 +25,18 @@ class UtilsTest(unittest.TestCase):
             [(("a", "b"), "c", 1), (("a", "b"), "d", 2), ((), "e", 3)],
         )
 
+    def test_path_check(self):
+        self.assertTrue(model.path_check("/home/user"))
+
+    def test_path_check_nok(self):
+        self.assertFalse(model.path_check("home/user"))
+
+    def test_path_check_list(self):
+        self.assertTrue(model.path_check(["/home/user", "/var/log"]))
+
+    def test_path_check_list_nok(self):
+        self.assertFalse(model.path_check(["/home/user", "var/log"]))
+
 
 class ConfOptTest(unittest.TestCase):
     """
@@ -49,32 +61,42 @@ class ConfOptTest(unittest.TestCase):
 
     def test_check(self):
         option = model.ConfOpt(None, "dir", "/home/user")
-        self.assertTrue(option.check((str, (), model.path_check)))
+        self.assertEqual(
+            option.check((str, (), model.path_check)), model.ConfOpt.CHECK_OK
+        )
 
     def test_check2(self):
         option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
         self.assertEqual(
-            option.check((str, ("archive", "output"), model.path_check)), 1
+            option.check((str, ("archive", "output"), model.path_check)),
+            model.ConfOpt.CHECK_OK,
         )
 
     def test_check_wrong_type(self):
         option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
         self.assertEqual(
-            option.check((int, ("archive", "output"), model.path_check)), 2
+            option.check((int, ("archive", "output"), model.path_check)),
+            model.ConfOpt.CHECK_NOK_TYPE,
         )
 
     def test_check_wrong_parent(self):
         option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
-        self.assertEqual(option.check((str, ("archive", "input"), model.path_check)), 3)
+        self.assertEqual(
+            option.check((str, ("archive", "input"), model.path_check)),
+            model.ConfOpt.CHECK_NOK_PARENT,
+        )
 
     def test_check_wrong_parent2(self):
         option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
-        self.assertEqual(option.check((str, (), model.path_check)), 3)
+        self.assertEqual(
+            option.check((str, (), model.path_check)), model.ConfOpt.CHECK_NOK_PARENT
+        )
 
     def test_check_wrong_path(self):
         option = model.ConfOpt(("archive", "output"), "dir", "home/user")
         self.assertEqual(
-            option.check((str, ("archive", "output"), model.path_check)), 4
+            option.check((str, ("archive", "output"), model.path_check)),
+            model.ConfOpt.CHECK_NOK_SPECIFIC,
         )
 
 
@@ -134,7 +156,7 @@ class ConfigTest(unittest.TestCase):
         )
 
     def test_sanitize_bad_parent(self):
-        self.assertTrue(
+        self.assertFalse(
             model.ConfigManager(self.path1).sanitize(
                 {
                     "input": (1, (str, ("not_archive",), model.path_check)),
@@ -144,7 +166,7 @@ class ConfigTest(unittest.TestCase):
         )
 
     def test_sanitize_bad_type(self):
-        self.assertTrue(
+        self.assertFalse(
             model.ConfigManager(self.path1).sanitize(
                 {
                     "input": (1, (str, ("archive",), model.path_check)),
@@ -154,7 +176,7 @@ class ConfigTest(unittest.TestCase):
         )
 
     def test_sanitize_bad_value(self):
-        self.assertTrue(
+        self.assertFalse(
             model.ConfigManager(self.path2).sanitize(
                 {
                     "input": (1, (str, ("archive",), model.path_check)),
