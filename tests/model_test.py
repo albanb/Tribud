@@ -72,6 +72,15 @@ class ConfOptTest(unittest.TestCase):
             model.ConfOpt.CHECK_OK,
         )
 
+    def test_check_list(self):
+        option = model.ConfOpt(
+            ("archive", "output"), "dir", ["/home/user", "/usr/var/toto"]
+        )
+        self.assertEqual(
+            option.check((list, ("archive", "output"), model.path_check)),
+            model.ConfOpt.CHECK_OK,
+        )
+
     def test_check_wrong_type(self):
         option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
         self.assertEqual(
@@ -96,6 +105,15 @@ class ConfOptTest(unittest.TestCase):
         option = model.ConfOpt(("archive", "output"), "dir", "home/user")
         self.assertEqual(
             option.check((str, ("archive", "output"), model.path_check)),
+            model.ConfOpt.CHECK_NOK_SPECIFIC,
+        )
+
+    def test_check_wrong_path_list(self):
+        option = model.ConfOpt(
+            ("archive", "output"), "dir", ["/home/user", "usr/var/toto"]
+        )
+        self.assertEqual(
+            option.check((list, ("archive", "output"), model.path_check)),
             model.ConfOpt.CHECK_NOK_SPECIFIC,
         )
 
