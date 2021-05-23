@@ -133,7 +133,7 @@ class ConfigTest(unittest.TestCase):
                 '{"archive":{"input": ["/home/alban/config.json", "/home/alban/test"], "output": "/home/alban/tar"}}'
             )
         self.path2 = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "data/config.json")
+            os.path.join(os.path.dirname(__file__), "data/config2.json")
         )
         os.makedirs(os.path.dirname(self.path2), exist_ok=True)
         with open(self.path2, "w") as filep:
@@ -201,6 +201,27 @@ class ConfigTest(unittest.TestCase):
                 }
             )
         )
+
+    def test_sanitize_missing_key_check(self):
+        # TODO: add a check for when a key is in the configuration file
+        # but no check is done
+        pass
+
+    def test_get_key(self):
+        configuration = model.ConfigManager(self.path1).get_key(("archive", "input"))
+        self.assertEqual(
+            configuration.get_value(), ["/home/alban/config.json", "/home/alban/test"]
+        )
+
+    def test_get_key2(self):
+        configuration = model.ConfigManager(self.path1).get_key(("input",))
+        self.assertEqual(
+            configuration.get_value(), ["/home/alban/config.json", "/home/alban/test"]
+        )
+
+    def test_get_no_key(self):
+        configuration = model.ConfigManager(self.path1)
+        self.assertRaises(ValueError, configuration.get_key, ("log",))
 
     def tearDown(self):
         os.remove(self.path1)
