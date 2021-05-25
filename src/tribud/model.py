@@ -195,6 +195,20 @@ class ConfigManager:
         """
         pass
 
+    def get_key(self, key_name):
+        """
+        This method will look for key name in the configuration to retrieve the
+        configuration definition.
+        :param key_name:
+        :type key_name: tuple
+        :returns: the configuration found, if any. None otherwise.
+        :rtype: ConfOpt object
+        """
+        for option in self._options:
+            if option.is_key(key_name):
+                return option
+        return None
+
 
 class _ConfOpt:
     """

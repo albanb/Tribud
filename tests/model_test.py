@@ -209,19 +209,29 @@ class ConfigTest(unittest.TestCase):
 
     def test_get_key(self):
         configuration = model.ConfigManager(self.path1).get_key(("archive", "input"))
+        if configuration is None:
+            self.assertIsNotNone(configuration)
         self.assertEqual(
-            configuration.get_value(), ["/home/alban/config.json", "/home/alban/test"]
+            configuration.get_value(),
+            ["/home/alban/config.json", "/home/alban/test"],
         )
 
     def test_get_key2(self):
         configuration = model.ConfigManager(self.path1).get_key(("input",))
+        if configuration is None:
+            self.assertIsNotNone(configuration)
         self.assertEqual(
-            configuration.get_value(), ["/home/alban/config.json", "/home/alban/test"]
+            configuration.get_value(),
+            ["/home/alban/config.json", "/home/alban/test"],
         )
 
     def test_get_no_key(self):
         configuration = model.ConfigManager(self.path1)
-        self.assertRaises(ValueError, configuration.get_key, ("log",))
+        self.assertIsNone(
+            configuration.get_key(
+                "log",
+            )
+        )
 
     def tearDown(self):
         os.remove(self.path1)
