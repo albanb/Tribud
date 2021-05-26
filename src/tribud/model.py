@@ -190,10 +190,18 @@ class ConfigManager:
         key: (boolean to define if key is mandatory or not,
               (type of key, parent key, sanity function))
         :type keys_definition: dictionnary
-        :returns: True if options are compliant, False otherwise
-        :rtype: boolean
+        :returns: None if options are compliant, list of non compliant options
+        otherwise.
+        :rtype: list of tuple containing non compliant options path.
         """
-        pass
+        output = []
+        for cle, valeur in keys_definition.items():
+            option = self.get_key(valeur[1][1]+(cle,))
+            if valeur[0] == 1 and option is None:
+                output.append(option.option)
+            if option is not None and option.check(valeur[1]) != ConfOpt.CHECK_OK:
+                output.append(option.option)
+        return output
 
     def get_key(self, key_name):
         """
@@ -206,7 +214,7 @@ class ConfigManager:
         """
         for option in self._options:
             if option.is_key(key_name):
-                return option
+                 return option
         return None
 
 
