@@ -102,6 +102,7 @@ class ConfOpt:
         else:
             self.option = opt_parent + (opt_key,)
         self.value = opt_value
+        self.checked = False
 
     def get_value(self):
         """
@@ -141,6 +142,7 @@ class ConfOpt:
         4 if dedicated check is wrong
         :rtype: integer
         """
+        self.checked = True
         if isinstance(self.value, option_definition[0]):
             if option_definition[1] == self.option[:-1]:
                 if option_definition[2](self.value):
@@ -198,9 +200,12 @@ class ConfigManager:
         for cle, valeur in keys_definition.items():
             option = self.get_key(valeur[1][1]+(cle,))
             if valeur[0] == 1 and option is None:
-                output.append(option.option)
+                output.append({cle: valeur})
             if option is not None and option.check(valeur[1]) != ConfOpt.CHECK_OK:
                 output.append(option.option)
+        for opt in self._options:
+            if opt.checked is False:
+                output.append(opt.option)
         return output
 
     def get_key(self, key_name):

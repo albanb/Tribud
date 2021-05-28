@@ -153,59 +153,68 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(json.decoder.JSONDecodeError, model.ConfigManager, self.path3)
 
     def test_sanitize_ok(self):
-        self.assertTrue(
+        self.assertEqual(
             model.ConfigManager(self.path1).sanitize(
                 {
-                    "input": (1, (str, ("archive",), model.path_check)),
+                    "input": (1, (list, ("archive",), model.path_check)),
                     "output": (1, (str, ("archive",), model.path_check)),
                 }
-            )
+            ),
+            [],
         )
 
     def test_sanitize_missing_mandatory_key(self):
-        self.assertFalse(
+        self.assertEqual(
             model.ConfigManager(self.path1).sanitize(
                 {
-                    "input": (1, (str, ("archive",), model.path_check)),
+                    "input": (1, (list, ("archive",), model.path_check)),
                     "output": (1, (str, ("archive",), model.path_check)),
                     "log": (1, (str, ("archive",), model.path_check)),
                 }
-            )
+            ),
+            [{"log": (1, (str, ("archive",), model.path_check))}],
         )
 
     def test_sanitize_bad_parent(self):
-        self.assertFalse(
+        self.assertEqual(
             model.ConfigManager(self.path1).sanitize(
                 {
-                    "input": (1, (str, ("not_archive",), model.path_check)),
+                    "input": (0, (list, ("not_archive",), model.path_check)),
                     "output": (1, (str, ("archive",), model.path_check)),
                 }
-            )
+            ),
+            [("archive", "input")],
         )
 
     def test_sanitize_bad_type(self):
-        self.assertFalse(
+        self.assertEqual(
             model.ConfigManager(self.path1).sanitize(
                 {
-                    "input": (1, (str, ("archive",), model.path_check)),
+                    "input": (1, (list, ("archive",), model.path_check)),
                     "output": (1, (int, ("archive",), model.path_check)),
                 }
-            )
+            ),
+            [("archive", "output")],
         )
 
     def test_sanitize_bad_value(self):
-        self.assertFalse(
+        self.assertEqual(
             model.ConfigManager(self.path2).sanitize(
                 {
-                    "input": (1, (str, ("archive",), model.path_check)),
+                    "input": (1, (list, ("archive",), model.path_check)),
                 }
-            )
+            ), [("archive", "input")]
         )
 
     def test_sanitize_missing_key_check(self):
-        # TODO: add a check for when a key is in the configuration file
-        # but no check is done
-        pass
+        self.assertEqual(
+            model.ConfigManager(self.path1).sanitize(
+                {
+                    "input": (1, (list, ("archive",), model.path_check)),
+                }
+            ),
+            [("archive", "output")],
+        )
 
     def test_get_key(self):
         configuration = model.ConfigManager(self.path1).get_key(("archive", "input"))
@@ -216,6 +225,7 @@ class ConfigTest(unittest.TestCase):
             ["/home/alban/config.json", "/home/alban/test"],
         )
 
+    @unittest.skip("Not implemented yet")
     def test_get_key2(self):
         configuration = model.ConfigManager(self.path1).get_key(("input",))
         if configuration is None:
