@@ -25,11 +25,7 @@ def list_to_elt(function):
     def wrapper_list_to_elt(arg):
         if not isinstance(arg, list):
             return function(arg)
-        else:
-            ret = True
-            for elt in arg:
-                ret = ret and function(elt)
-            return ret
+        return all((function(elt) for elt in arg))
 
     return wrapper_list_to_elt
 
@@ -179,8 +175,9 @@ class ConfigManager:
                 except json.decoder.JSONDecodeError as err:
                     self.logger.critical("Config file format not JSON compliant")
                     raise err
-        for option in flatten(config):
-            self._options.append(ConfOpt(option[0], option[1], option[2]))
+        self._options = [
+            ConfOpt(option[0], option[1], option[2]) for option in flatten(config)
+        ]
 
     def sanitize(self, keys_definition):
         """
@@ -198,7 +195,7 @@ class ConfigManager:
         """
         output = []
         for cle, valeur in keys_definition.items():
-            option = self.get_key(valeur[1][1]+(cle,))
+            option = self.get_key(valeur[1][1] + (cle,))
             if valeur[0] == 1 and option is None:
                 output.append({cle: valeur})
             if option is not None and option.check(valeur[1]) != ConfOpt.CHECK_OK:
@@ -219,7 +216,7 @@ class ConfigManager:
         """
         for option in self._options:
             if option.is_key(key_name):
-                 return option
+                return option
         return None
 
 
