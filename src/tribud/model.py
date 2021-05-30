@@ -141,7 +141,7 @@ class ConfOpt:
         self.checked = True
         if isinstance(self.value, option_definition[0]):
             if option_definition[1] == self.option[:-1]:
-                if option_definition[2](self.value):
+                if callable(option_definition[2]) and option_definition[2](self.value):
                     return ConfOpt.CHECK_OK
                 return ConfOpt.CHECK_NOK_SPECIFIC
             return ConfOpt.CHECK_NOK_PARENT
@@ -183,11 +183,11 @@ class ConfigManager:
         """
         This method will check all the options to send all non compliant configurations.
 
-        # key: (type of key, parent key, sanity function)
+        # key: (mandatory, (type of key, (parent key), sanity function))
         :param keys_definition: dictionnary defining all options. Each item of the
         dictionnary shall have the following form:
         key: (boolean to define if key is mandatory or not,
-              (type of key, parent key, sanity function))
+              (type of key, (parent key), sanity function))
         :type keys_definition: dictionnary
         :returns: None if options are compliant, list of non compliant options
         otherwise.
@@ -209,7 +209,7 @@ class ConfigManager:
         """
         This method will look for key name in the configuration to retrieve the
         configuration definition.
-        :param key_name:
+        :param key_name: tuple containing the full path of the option
         :type key_name: tuple
         :returns: the configuration found, if any. None otherwise.
         :rtype: ConfOpt object
@@ -218,183 +218,6 @@ class ConfigManager:
             if option.is_key(key_name):
                 return option
         return None
-
-
-class _ConfOpt:
-    """
-    This class described one config options with its description to be able to check
-    that the configuration option is compliant with its specification.
-
-    :param opt_parent: parent option in the configuration file. None if no parent.
-    :type opt_parent: str
-    :param opt_key: configuration option store in this object.
-    :type opt_key: str
-    :param opt_value: associated value of the configuration option.
-    :type opt_value: misc
-    :param allowed: dict describing the allowed configuration option.
-    :type allowed: dict
-    """
-
-    def __init__(self, opt_parent, opt_key, opt_value, allowed):
-        self.logger = logging.getLogger("".join([__appname__, ".", __name__]))
-        self.parent = opt_parent
-        self.key = opt_key
-        self.value = opt_value
-        try:
-            self.desc = allowed[opt_key]
-        except KeyError as err:
-            self.logger.critical(
-                "%s is not allowed. Configuration file not valid", opt_key
-            )
-            raise err
-        self.allowed = allowed
-
-    def check(self):
-        """
-        Check one config option to ensure that it is a valid one.
-
-        :return: True if option is valid, False if not
-        :rtype: bool
-        """
-        if self.parent != self.desc[1]:
-            self.logger.critical("%s option has not a valid parent.", self.key)
-            raise KeyError("Key not valid, wrong parent.", self.key)
-        if not isinstance(self.value, self.desc[0]):
-            self.logger.critical(
-                "The value of the option %s is not compliant with its type.", self.key
-            )
-            raise ValueError("Value type not expected.", self.key, self.desc[0])
-        return self.confopt_dict()
-
-    def confopt_dict(self):
-        """
-        This method check the validity of dict config option. It it is not a dict
-        option, the option is pass through the next handler.
-
-        :return: True if option is valid, False if not.
-        :rtype: bool
-        """
-        if self.desc[2] == "dict":
-            res = True
-            for conf_key, conf_value in self.value.items():
-                if isinstance(conf_value, list):
-                    for element in conf_value:
-                        conf_opt = _ConfOpt(self.key, conf_key, element, self.allowed)
-                        res = conf_opt.check() and res
-                else:
-                    conf_opt = _ConfOpt(self.key, conf_key, conf_value, self.allowed)
-                    res = conf_opt.check() and res
-            return res
-        return self.confopt_path()
-
-    def confopt_path(self):
-        """
-        This method check the validity of path config option. It it is not a valid path
-        option, the option is pass through the next handler.
-
-        :return: True if option is valid, False if not.
-        :rtype: bool
-        """
-        if self.desc[2] == "path":
-            path = pathlib.Path(self.value)
-            if not path.is_absolute():
-                raise ValueError("This is not an absolute valid path.", self.key)
-            return True
-        return self.default_handler()
-
-    def default_handler(self):
-        """
-        This method is the default option validity handler. If reach, it means that the
-        option validity cannot be check, and a message is raised.
-
-        :return: always return true as the option cannot be check.
-        :rtype: bool
-        """
-        self.logger.warning(
-            "The config option %s/%s content cannot be check.", self.parent, self.key
-        )
-        return True
-
-
-class ConfigManagerb:
-    """
-    This class read the backup tool configuration, which is json file, and
-    serve it to other modules.
-
-    :param path: the path to the configuration file.
-    :type path: string
-    :param mandatory_keys: all mandatory keys that have to be in the config file.
-    :type mandatory_keys: tuple
-    """
-
-    def __init__(self, path, mandatory_keys):
-        self.path = path
-        self.logger = logging.getLogger("".join([__appname__, ".", __name__]))
-        try:
-            config_file = open(self.path)
-        except IOError as err:
-            self.logger.critical("Config file doesn't exist: %s", self.path)
-            raise err
-        else:
-            with config_file:
-                try:
-                    self.config = json.load(config_file)
-                except json.decoder.JSONDecodeError as err:
-                    self.logger.critical("Config file format not JSON compliant")
-                    raise err
-        for keys in mandatory_keys:
-            if self.item_search(keys) is None:
-                self.logger.critical(
-                    "Mandatory keys %s not in the configuration file", keys
-                )
-                raise KeyError("Missing mandatory key in configuration file", keys)
-
-    def sanitize(self, allowed_keys):
-        """
-        Check config file to ensure that all options are valid.
-
-        :param allowed_keys: a dictionnary containing the description of all valid keys
-        for the config file.
-        :type keys: dict
-
-        :return: config file valid or not.
-        :rtype: boolean
-        """
-        res = True
-        for conf_key, conf_value in self.config.items():
-            if isinstance(conf_value, list):
-                for element in conf_value:
-                    conf_opt = _ConfOpt(None, conf_key, element, allowed_keys)
-                    res = conf_opt.check() and res
-            else:
-                conf_opt = _ConfOpt(None, conf_key, conf_value, allowed_keys)
-                res = conf_opt.check() and res
-        return res
-
-    def _item_search(self, config_part, keys):
-        if keys[0] not in config_part:
-            self.logger.warning("%s key not present in the config file", keys[0])
-            return None
-        if len(keys) == 1:
-            return config_part[keys[0]]
-        return self._item_search(config_part[keys[0]], keys[1:])
-
-    def item_search(self, keys):
-        """
-        Look for a dedicated config inside the configuration file.
-
-        :param keys: a tuple containing the "path" to the nested configuration value.
-        :type keys: tuple
-
-        :return: the configuration value.
-        :rtype: variable
-        """
-        if keys[0] not in self.config:
-            self.logger.warning("%s key not present in the config file", keys[0])
-            return None
-        if len(keys) == 1:
-            return self.config[keys[0]]
-        return self._item_search(self.config[keys[0]], keys[1:])
 
 
 class Container:
@@ -536,23 +359,23 @@ if __name__ == "__main__":
         test = ConfigManager(
             os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "../../docs/config.json")
-            ),
-            (("archive", "input"), ("archive", "output")),
+            )
         )
     except (IOError, json.decoder.JSONDecodeError):
         sys.exit()
-
-    CONFIG_KEYS_ALLOWED = {
-        # key: (type of key, parent key, sanity function)
-        "archive": (dict, None, "dict"),
-        "input": (str, "archive", "path"),
-        "output": (dict, "archive", "dict"),
-        "dir": (str, "output", "path"),
-        "log": (str, None, None),
-    }
-    try:
-        print("sanitize: ", test.sanitize(CONFIG_KEYS_ALLOWED))
-    except (KeyError, ValueError):
-        sys.exit()
-    for key, value in test.item_search(("archive",)).items():
-        print(key, ": ", value)
+    CONFIG_KEYS_DEFINITION = {
+        # key: (mandatory, (type of key, parent key, sanity function))
+        "input": (1, (list, ("archive", ), path_check)),
+        "dir": (1, (str, ("archive", "output"), path_check)),
+        "log": (0, (str, (), None)),
+        }
+    non_compliant_config = test.sanitize(CONFIG_KEYS_DEFINITION)
+    print("config error:")
+    for item in non_compliant_config:
+        print(item)
+    print("input:")
+    print(test.get_key(("archive", "input")))
+    print("output:")
+    print(test.get_key(("archive", "output", "dir")))
+    print("log:")
+    print(test.get_key(("log",)))

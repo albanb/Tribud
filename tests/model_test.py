@@ -117,6 +117,13 @@ class ConfOptTest(unittest.TestCase):
             model.ConfOpt.CHECK_NOK_SPECIFIC,
         )
 
+    def test_check_not_callable(self):
+        option = model.ConfOpt(("archive", "output"), "dir", "home/user")
+        self.assertEqual(
+            option.check((str, ("archive", "output"), None)),
+            model.ConfOpt.CHECK_NOK_SPECIFIC,
+        )
+
 
 class ConfigTest(unittest.TestCase):
     """
@@ -249,124 +256,6 @@ class ConfigTest(unittest.TestCase):
         os.remove(self.path3)
 
 
-#  pylint: disable=too-many-instance-attributes
-class ConfigbTest(unittest.TestCase):
-    """
-    This class will test the Config class.
-    """
-
-    def setUp(self):
-        self.path1 = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "data/config.json")
-        )
-        os.makedirs(os.path.dirname(self.path1), exist_ok=True)
-        with open(self.path1, "w") as filep:
-            filep.write(
-                '{"archive":{"input": ["/home/alban/dev/soft/tribud/tests/data/config.json", "/home/alban/dev/soft/tribud/tests/data/test"], "output": "/home/alban/dev/soft/tribud/tests/data/tar"}}'
-            )
-        self.mandatory_keys = (("archive", "input"), ("archive", "output"))
-        self.allowed_keys_ok = {
-            # key: (type of key, parent key, sanity function)
-            "archive": (dict, None, "dict"),
-            "input": (str, "archive", "path"),
-            "output": (str, "archive", "path"),
-        }
-        self.allowed_keys_bad_type = {
-            # key: (type of key, parent key, sanity function)
-            "archive": (dict, None, "dict"),
-            "input": (str, "archive", "path"),
-            "output": (dict, "archive", "path"),
-        }
-        self.allowed_keys_bad_parent = {
-            # key: (type of key, parent key, sanity function)
-            "archive": (dict, None, "dict"),
-            "input": (str, None, "path"),
-            "output": (dict, "archive", "path"),
-        }
-        self.path2 = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "data/config2.json")
-        )
-        with open(self.path2, "w") as filep:
-            filep.write('{"archive": "data/config.json", "output": "data/tar"}')
-        self.mandatory_keys2 = (("archive",), ("output",))
-        self.path3 = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "data/config3.json")
-        )
-        with open(self.path3, "w") as filep:
-            filep.write(
-                '{"archive: ["data/config.json", "data/test"], "output": "data/tar"}'
-            )
-
-    def test_item_search_archive(self):
-        json_config = model.ConfigManagerb(self.path1, self.mandatory_keys)
-        result = json_config.item_search(("archive",))
-        self.assertDictEqual(
-            result,
-            {
-                "input": [
-                    "/home/alban/dev/soft/tribud/tests/data/config.json",
-                    "/home/alban/dev/soft/tribud/tests/data/test",
-                ],
-                "output": "/home/alban/dev/soft/tribud/tests/data/tar",
-            },
-        )
-
-    def test_item_search_input(self):
-        json_config = model.ConfigManagerb(self.path1, self.mandatory_keys)
-        result = json_config.item_search(("archive", "input"))
-        self.assertEqual(
-            result,
-            [
-                "/home/alban/dev/soft/tribud/tests/data/config.json",
-                "/home/alban/dev/soft/tribud/tests/data/test",
-            ],
-        )
-
-    def test_item_search_output(self):
-        json_config = model.ConfigManagerb(self.path1, self.mandatory_keys)
-        result = json_config.item_search(("archive", "output"))
-        self.assertEqual(result, "/home/alban/dev/soft/tribud/tests/data/tar")
-
-    def test_item_search_log_not_exist(self):
-        json_config = model.ConfigManagerb(self.path1, self.mandatory_keys)
-        result = json_config.item_search(("log",))
-        self.assertIsNone(result)
-
-    def test_item_search_input_not_exist(self):
-        self.assertRaises(
-            KeyError, model.ConfigManagerb, self.path2, self.mandatory_keys
-        )
-
-    def test_invalid_json(self):
-        self.assertRaises(
-            json.decoder.JSONDecodeError,
-            model.ConfigManagerb,
-            self.path3,
-            self.mandatory_keys,
-        )
-
-    def test_sanitize_ok(self):
-        json_config = model.ConfigManagerb(self.path1, self.mandatory_keys)
-        self.assertTrue(json_config.sanitize(self.allowed_keys_ok))
-
-    def test_sanitize_bad_type(self):
-        json_config = model.ConfigManagerb(self.path1, self.mandatory_keys)
-        self.assertRaises(ValueError, json_config.sanitize, self.allowed_keys_bad_type)
-
-    def test_sanitize_bad_parent(self):
-        json_config = model.ConfigManagerb(self.path1, self.mandatory_keys)
-        self.assertRaises(KeyError, json_config.sanitize, self.allowed_keys_bad_parent)
-
-    def test_sanitize_relative_path(self):
-        json_config = model.ConfigManagerb(self.path2, self.mandatory_keys2)
-        self.assertRaises(ValueError, json_config.sanitize, self.allowed_keys_ok)
-
-    def tearDown(self):
-        os.remove(self.path1)
-        os.remove(self.path2)
-        os.remove(self.path3)
-
-
 class DirHandlerTest(unittest.TestCase):
     """
     This class will test the DirHandler class.
@@ -472,25 +361,6 @@ def suite_config_test():
     loader = unittest.TestLoader()
     suite = unittest.TestSuite(loader.loadTestsFromTestCase(ConfigTest))
     return suite
-
-
-def suite_configb_test():
-    """
-    List of tests to run to test Config class.
-    """
-    tests = [
-        "test_item_search_archive",
-        "test_item_search_input",
-        "test_item_search_output",
-        "test_item_search_log_not_exist",
-        "test_item_search_input_not_exist",
-        "test_invalid_json",
-        "test_sanitize_ok",
-        "test_sanitize_bad_type",
-        "test_sanitize_bad_parent",
-        "test_sanitize_relative_path",
-    ]
-    return unittest.TestSuite(map(ConfigbTest, tests))
 
 
 def suite_dirhandler_test():
