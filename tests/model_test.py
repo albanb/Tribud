@@ -179,7 +179,7 @@ class ConfigTest(unittest.TestCase):
                     "log": (1, (str, ("archive",), model.path_check)),
                 }
             ),
-            [{"log": (1, (str, ("archive",), model.path_check))}],
+            [("archive", "log")],
         )
 
     def test_sanitize_bad_parent(self):

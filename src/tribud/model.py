@@ -197,7 +197,7 @@ class ConfigManager:
         for cle, valeur in keys_definition.items():
             option = self.get_key(valeur[1][1] + (cle,))
             if valeur[0] == 1 and option is None:
-                output.append({cle: valeur})
+                output.append(valeur[1][1] + (cle,))
             if option is not None and option.check(valeur[1]) != ConfOpt.CHECK_OK:
                 output.append(option.option)
         for opt in self._options:
