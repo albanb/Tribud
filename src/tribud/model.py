@@ -15,6 +15,8 @@ import pathlib
 
 if __package__ == "" or __package__ is None:
     __appname__ = "tribud"
+else:
+    from tribud import __appname__
 
 
 def list_to_elt(function):
@@ -189,8 +191,7 @@ class ConfigManager:
         key: (boolean to define if key is mandatory or not,
               (type of key, (parent key), sanity function))
         :type keys_definition: dictionnary
-        :returns: None if options are compliant, list of non compliant options
-        otherwise.
+        :returns: list of non compliant options, empty if all options are compliant.
         :rtype: list of tuple containing non compliant options path.
         """
         output = []
