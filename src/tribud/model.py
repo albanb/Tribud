@@ -339,11 +339,24 @@ class DirHandler:
                     "The following directory can not be backup: %s", dst
                 )
                 return 1
-            shutil.copy2(src, dst, follow_symlinks=False)
+            try:
+                shutil.copy2(src, dst, follow_symlinks=False)
+            except (FileExistsError, shutil.SameFileError, PermissionError):
+                os.remove(dst.joinpath(src.name))
+                shutil.copy2(src, dst, follow_symlinks=False)
         elif dst.exists():
             for child in src.iterdir():
                 if child.is_file() or child.is_symlink():
-                    shutil.copy2(child, dst, follow_symlinks=False)
+                    try:
+                        shutil.copy2(child, dst, follow_symlinks=False)
+                    except (FileExistsError, shutil.SameFileError, PermissionError):
+                        if os.access(dst.joinpath(child.name), os.F_OK):
+                            os.remove(dst.joinpath(child.name))
+                            shutil.copy2(child, dst, follow_symlinks=False)
+                        else:
+                            self.logger.warning(
+                                "The following symlink can not be backup: %s", dst
+                            )
                 else:
                     self._copytree(child, dst.joinpath(child.name))
         else:
@@ -366,10 +379,10 @@ if __name__ == "__main__":
         sys.exit()
     CONFIG_KEYS_DEFINITION = {
         # key: (mandatory, (type of key, parent key, sanity function))
-        "input": (1, (list, ("archive", ), path_check)),
+        "input": (1, (list, ("archive",), path_check)),
         "dir": (1, (str, ("archive", "output"), path_check)),
         "log": (0, (str, (), None)),
-        }
+    }
     non_compliant_config = test.sanitize(CONFIG_KEYS_DEFINITION)
     print("config error:")
     for item in non_compliant_config:
