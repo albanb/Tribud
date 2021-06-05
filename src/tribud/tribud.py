@@ -61,8 +61,11 @@ def main():
     handler = model.DirHandler(bckdir.value)
     backup = model.Container(handler)
     backup.connect()
+    err = []
     for files in toarchive.value:
-        backup.add(files)
+        err.extend(backup.add(files))
+    for file in err:
+        logger.info("This file or directory has not been back up: %s", file)
     return 0
 
 

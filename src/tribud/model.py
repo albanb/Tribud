@@ -265,13 +265,13 @@ class Container:
         This method will ensure than the container exist and that connection
         with it is possible.
         """
-        self.handler.connect()
+        return self.handler.connect()
 
     def add(self, path):
         """
         This method is to add the data to the container.
         """
-        self.handler.add(path)
+        return self.handler.add(path)
 
 
 class DirHandler:
@@ -327,18 +327,16 @@ class DirHandler:
             dirs = dirs[:-1]
         for directory in dirs:
             dst_path = dst_path.joinpath(directory)
-        self._copytree(src_path, dst_path)
-        return dst_path
+        ret = self._copytree(src_path, dst_path)
+        return ret
 
     def _copytree(self, src, dst):
+        ret = []
         if src.is_file() or src.is_symlink():
             try:
                 os.makedirs(dst, exist_ok=True)
             except PermissionError:
-                self.logger.warning(
-                    "The following directory can not be backup: %s", dst
-                )
-                return 1
+                ret.append(dst)
             try:
                 shutil.copy2(src, dst, follow_symlinks=False)
             except (FileExistsError, shutil.SameFileError, PermissionError):
@@ -354,14 +352,12 @@ class DirHandler:
                             os.remove(dst.joinpath(child.name))
                             shutil.copy2(child, dst, follow_symlinks=False)
                         else:
-                            self.logger.warning(
-                                "The following symlink can not be backup: %s", dst
-                            )
+                            ret.append(dst)
                 else:
-                    self._copytree(child, dst.joinpath(child.name))
+                    ret.extend(self._copytree(child, dst.joinpath(child.name)))
         else:
             shutil.copytree(src, dst, symlinks=True)
-        return 0
+        return ret
 
 
 if __name__ == "__main__":
