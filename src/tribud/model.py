@@ -317,11 +317,11 @@ class DirHandler:
         :param path: path of the file or directory to copy
                   If it is a directory, the entire tree will be copied
         :type path: string
-        :return : full path of the backup file or directory
-        :rtype: string
+        :return : list of non backup files or directory
+        :rtype: list
         """
         src_path = pathlib.Path(os.path.abspath(path))
-        dst_path = pathlib.Path(self.bckup_dst)
+        dst_path = self.bckup_dst
         dirs = src_path.parts[1:]
         if src_path.is_file():
             dirs = dirs[:-1]
@@ -332,6 +332,13 @@ class DirHandler:
 
     def _copytree(self, src, dst):
         ret = []
+        if (
+            src.is_socket()
+            or src.is_fifo()
+            or src.is_block_device()
+            or src.is_char_device()
+        ):
+            return ret
         if src.is_file() or src.is_symlink():
             try:
                 os.makedirs(dst, exist_ok=True)
@@ -342,21 +349,20 @@ class DirHandler:
             except (FileExistsError, shutil.SameFileError, PermissionError):
                 os.remove(dst.joinpath(src.name))
                 shutil.copy2(src, dst, follow_symlinks=False)
-        elif dst.exists():
+        elif src.is_dir() and dst.exists():
             for child in src.iterdir():
                 if child.is_file() or child.is_symlink():
-                    try:
-                        shutil.copy2(child, dst, follow_symlinks=False)
-                    except (FileExistsError, shutil.SameFileError, PermissionError):
-                        if os.access(dst.joinpath(child.name), os.F_OK):
-                            os.remove(dst.joinpath(child.name))
-                            shutil.copy2(child, dst, follow_symlinks=False)
-                        else:
-                            ret.append(dst)
+                    shutil.copy2(child, dst, follow_symlinks=False)
                 else:
-                    ret.extend(self._copytree(child, dst.joinpath(child.name)))
+                    self._copytree(child, dst.joinpath(child.name))
+        elif src.is_dir and not dst.exists():
+            try:
+                shutil.copytree(src, dst, symlinks=True)
+            except shutil.Error as err:
+                for error in err.args[0]:
+                    ret.append(error[0])
         else:
-            shutil.copytree(src, dst, symlinks=True)
+            return ret
         return ret
 
 
