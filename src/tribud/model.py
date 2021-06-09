@@ -13,12 +13,6 @@ import shutil
 import pathlib
 
 
-if __package__ == "" or __package__ is None:
-    __appname__ = "tribud"
-else:
-    from tribud import __appname__
-
-
 def list_to_elt(function):
     """
     Decorator to transform argument list to call for each elements of the list.
@@ -94,7 +88,6 @@ class ConfOpt:
     CHECK_NOK_SPECIFIC = 4
 
     def __init__(self, opt_parent, opt_key, opt_value):
-        self.logger = logging.getLogger("".join([__appname__, ".", __name__]))
         if not isinstance(opt_parent, tuple):
             self.option = (opt_key,)
         else:
@@ -164,19 +157,13 @@ class ConfigManager:
 
         self._path = path
         self._options = []
-        self.logger = logging.getLogger("".join([__appname__, ".", __name__]))
         try:
             config_file = open(self._path)
         except IOError as err:
-            self.logger.critical("Config file doesn't exist: %s", self._path)
             raise err
         else:
             with config_file:
-                try:
-                    config = json.load(config_file)
-                except json.decoder.JSONDecodeError as err:
-                    self.logger.critical("Config file format not JSON compliant")
-                    raise err
+                config = json.load(config_file)
         self._options = [
             ConfOpt(option[0], option[1], option[2]) for option in flatten(config)
         ]
@@ -286,7 +273,6 @@ class DirHandler:
 
     def __init__(self, path):
         self.bckup_dst = pathlib.Path(os.path.abspath(path))
-        self.logger = logging.getLogger("".join([__appname__, ".", __name__]))
 
     def is_connected(self):
         """
@@ -300,12 +286,14 @@ class DirHandler:
     def connect(self):
         """
         Create the backup directory if it doesn't exist. The path shall be abs path.
+
+        :return : name of the back up directory. None if connection not possible.
+        :rtype: str
         """
         if self.bckup_dst.is_absolute():
             os.makedirs(self.bckup_dst, exist_ok=True)
-            self.logger.info("The backup directory is : %s", str(self.bckup_dst))
-        else:
-            self.logger.warning("%s is not an absolute path", str(self.bckup_dst))
+            return str(self.bckup_dst)
+        return None
 
     def add(self, path):
         """

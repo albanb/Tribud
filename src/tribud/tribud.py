@@ -51,7 +51,11 @@ def main():
     logger.info("Path to config: %s", confpath)
     try:
         tribudconfig = model.ConfigManager(confpath)
-    except (IOError, json.decoder.JSONDecodeError):
+    except IOError:
+        logger.critical("Config file doesn't exist: %s", confpath)
+        sys.exit()
+    except json.decoder.JSONDecodeError:
+        logger.critical("Config file format not JSON compliant")
         sys.exit()
     non_compliant_option = tribudconfig.sanitize(CONFIG_KEYS_DEFINITION)
     for item in non_compliant_option:
@@ -60,7 +64,10 @@ def main():
     toarchive = tribudconfig.get_key(("archive", "input"))
     handler = model.DirHandler(bckdir.value)
     backup = model.Container(handler)
-    backup.connect()
+    if backup.connect() is None:
+        logger.warning("%s is not an absolute path", backup.bckup_dst)
+    else:
+        logger.info("The backup directory is: %s", backup.bckup_dst)
     err = []
     for files in toarchive.value:
         err.extend(backup.add(files))
