@@ -10,6 +10,7 @@ import os.path
 import unittest
 import shutil
 import json
+import sys
 from context import model
 
 
@@ -17,6 +18,23 @@ class UtilsTest(unittest.TestCase):
     """
     This class will test the model functions.
     """
+
+    def setUp(self):
+        if sys.platform.startswith('win32'):
+            self.path1 = "C:\\users"
+            self.path2 = "users"
+            self.path3 = "C:\\Windows\\toto"
+            self.path4 = "Windows\\Temp"
+        elif sys.platform.startswith('linux'):
+            self.path1 = "/home/user"
+            self.path2 = "home/alban"
+            self.path3 = "/var/log"
+            self.path4 = "var/log"
+        else:
+            self.path1 = "/home/user"
+            self.path2 = "home/alban"
+            self.path3 = "/var/log"
+            self.path4 = "var/log"
 
     def test_flatten(self):
         dic = {"a": {"b": {"c": 1, "d": 2}}, "e": 3}
@@ -26,16 +44,16 @@ class UtilsTest(unittest.TestCase):
         )
 
     def test_path_check(self):
-        self.assertTrue(model.path_check("/home/user"))
+        self.assertTrue(model.path_check(self.path1))
 
     def test_path_check_nok(self):
-        self.assertFalse(model.path_check("home/user"))
+        self.assertFalse(model.path_check(self.path2))
 
     def test_path_check_list(self):
-        self.assertTrue(model.path_check(["/home/user", "/var/log"]))
+        self.assertTrue(model.path_check([self.path1, self.path3]))
 
     def test_path_check_list_nok(self):
-        self.assertFalse(model.path_check(["/home/user", "var/log"]))
+        self.assertFalse(model.path_check([self.path1, self.path4]))
 
 
 class ConfOptTest(unittest.TestCase):
@@ -43,30 +61,44 @@ class ConfOptTest(unittest.TestCase):
     This class will test the ConfOpt class
     """
 
+    def setUp(self):
+        if sys.platform.startswith('win32'):
+            self.path1 = "C:\\users"
+            self.path2 = "users"
+            self.path3 = "C:\\Windows\toto"
+        elif sys.platform.startswith('linux'):
+            self.path1 = "/home/user"
+            self.path2 = "home/user"
+            self.path3 = "/usr/var/toto"
+        else:
+            self.path1 = "/home/user"
+            self.path2 = "home/user"
+            self.path3 = "/usr/var/toto"
+
     def test_getvalue(self):
-        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
-        self.assertEqual(option.get_value(), "/home/user")
+        option = model.ConfOpt(("archive", "output"), "dir", self.path1)
+        self.assertEqual(option.get_value(), self.path1)
 
     def test_iskey(self):
-        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        option = model.ConfOpt(("archive", "output"), "dir", self.path1)
         self.assertTrue(option.is_key(("archive", "output", "dir")))
 
     def test_not_iskey(self):
-        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        option = model.ConfOpt(("archive", "output"), "dir", self.path1)
         self.assertFalse(option.is_key(("archive", "output", "log")))
 
     def test_iskey_with_none(self):
-        option = model.ConfOpt(None, "dir", "/home/user")
+        option = model.ConfOpt(None, "dir", self.path1)
         self.assertTrue(option.is_key(("dir",)))
 
     def test_check(self):
-        option = model.ConfOpt(None, "dir", "/home/user")
+        option = model.ConfOpt(None, "dir", self.path1)
         self.assertEqual(
             option.check((str, (), model.path_check)), model.ConfOpt.CHECK_OK
         )
 
     def test_check2(self):
-        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        option = model.ConfOpt(("archive", "output"), "dir", self.path1)
         self.assertEqual(
             option.check((str, ("archive", "output"), model.path_check)),
             model.ConfOpt.CHECK_OK,
@@ -74,7 +106,7 @@ class ConfOptTest(unittest.TestCase):
 
     def test_check_list(self):
         option = model.ConfOpt(
-            ("archive", "output"), "dir", ["/home/user", "/usr/var/toto"]
+            ("archive", "output"), "dir", [self.path1, self.path3]
         )
         self.assertEqual(
             option.check((list, ("archive", "output"), model.path_check)),
@@ -82,27 +114,27 @@ class ConfOptTest(unittest.TestCase):
         )
 
     def test_check_wrong_type(self):
-        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        option = model.ConfOpt(("archive", "output"), "dir", self.path1)
         self.assertEqual(
             option.check((int, ("archive", "output"), model.path_check)),
             model.ConfOpt.CHECK_NOK_TYPE,
         )
 
     def test_check_wrong_parent(self):
-        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        option = model.ConfOpt(("archive", "output"), "dir", self.path1)
         self.assertEqual(
             option.check((str, ("archive", "input"), model.path_check)),
             model.ConfOpt.CHECK_NOK_PARENT,
         )
 
     def test_check_wrong_parent2(self):
-        option = model.ConfOpt(("archive", "output"), "dir", "/home/user")
+        option = model.ConfOpt(("archive", "output"), "dir", self.path1)
         self.assertEqual(
             option.check((str, (), model.path_check)), model.ConfOpt.CHECK_NOK_PARENT
         )
 
     def test_check_wrong_path(self):
-        option = model.ConfOpt(("archive", "output"), "dir", "home/user")
+        option = model.ConfOpt(("archive", "output"), "dir", self.path2)
         self.assertEqual(
             option.check((str, ("archive", "output"), model.path_check)),
             model.ConfOpt.CHECK_NOK_SPECIFIC,
@@ -110,7 +142,7 @@ class ConfOptTest(unittest.TestCase):
 
     def test_check_wrong_path_list(self):
         option = model.ConfOpt(
-            ("archive", "output"), "dir", ["/home/user", "usr/var/toto"]
+            ("archive", "output"), "dir", [self.path1, self.path2]
         )
         self.assertEqual(
             option.check((list, ("archive", "output"), model.path_check)),
@@ -118,7 +150,7 @@ class ConfOptTest(unittest.TestCase):
         )
 
     def test_check_not_callable(self):
-        option = model.ConfOpt(("archive", "output"), "dir", "home/user")
+        option = model.ConfOpt(("archive", "output"), "dir", self.path2)
         self.assertEqual(
             option.check((str, ("archive", "output"), None)),
             model.ConfOpt.CHECK_NOK_SPECIFIC,
@@ -131,27 +163,70 @@ class ConfigTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.path1 = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "data/config.json")
-        )
+        if sys.platform.startswith('win32'):
+            self.path1 = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "data\\config.json")
+            )
+            with open(self.path1, "w") as filep:
+                filep.write(
+                        '{"archive":{"input": ["C:\\\\Users\\\\toto\\\\config.json", "C:\\\\Users\\\\toto\\\\test"], "output": "C:\\\\Users\\\\toto\\\\tar"}}'
+                )
+            self.result1 = ["C:\\Users\\toto\\config.json", "C:\\Users\\toto\\test"]
+            self.path2 = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "data\\config2.json")
+            )
+            with open(self.path2, "w") as filep:
+                filep.write('{"archive":{"input": ["Users\\\\config.json", "C:\\\\Users\\\\test"]}}')
+            self.path3 = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "data\\config3.json")
+            )
+            with open(self.path3, "w") as filep:
+                filep.write(
+                    '{"archive: ["data\\\\config.json", "data\\\\test"], "output": "data\\\\tar"}'
+                )
+        elif sys.platform.startswith('linux'):
+            self.path1 = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "data/config.json")
+            )
+            with open(self.path1, "w") as filep:
+                filep.write(
+                    '{"archive":{"input": ["/home/alban/config.json", "/home/alban/test"], "output": "/home/alban/tar"}}'
+                )
+            self.result1 = ["/home/alban/config.json", "/home/alban/test"]
+            self.path2 = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "data/config2.json")
+            )
+            with open(self.path2, "w") as filep:
+                filep.write('{"archive":{"input": ["home/config.json", "/home/test"]}}')
+            self.path3 = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "data/config3.json")
+            )
+            with open(self.path3, "w") as filep:
+                filep.write(
+                    '{"archive: ["data/config.json", "data/test"], "output": "data/tar"}'
+                )
+        else:
+            self.path1 = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "data/config.json")
+            )
+            with open(self.path1, "w") as filep:
+                filep.write(
+                    '{"archive":{"input": ["/home/alban/config.json", "/home/alban/test"], "output": "/home/alban/tar"}}'
+                )
+            self.path2 = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "data/config2.json")
+            )
+            with open(self.path2, "w") as filep:
+                filep.write('{"archive":{"input": ["home/config.json", "/home/test"]}}')
+            self.path3 = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "data/config3.json")
+            )
+            with open(self.path3, "w") as filep:
+                filep.write(
+                    '{"archive: ["data/config.json", "data/test"], "output": "data/tar"}'
+                )
         os.makedirs(os.path.dirname(self.path1), exist_ok=True)
-        with open(self.path1, "w") as filep:
-            filep.write(
-                '{"archive":{"input": ["/home/alban/config.json", "/home/alban/test"], "output": "/home/alban/tar"}}'
-            )
-        self.path2 = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "data/config2.json")
-        )
         os.makedirs(os.path.dirname(self.path2), exist_ok=True)
-        with open(self.path2, "w") as filep:
-            filep.write('{"archive":{"input": ["home/config.json", "/home/test"]}}')
-        self.path3 = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "data/config3.json")
-        )
-        with open(self.path3, "w") as filep:
-            filep.write(
-                '{"archive: ["data/config.json", "data/test"], "output": "data/tar"}'
-            )
 
     def test_wrong_path(self):
         self.assertRaises(IOError, model.ConfigManager, "/test1/test2")
@@ -229,7 +304,7 @@ class ConfigTest(unittest.TestCase):
             self.assertIsNotNone(configuration)
         self.assertEqual(
             configuration.get_value(),
-            ["/home/alban/config.json", "/home/alban/test"],
+            self.result1,
         )
 
     @unittest.skip("Not implemented yet")
