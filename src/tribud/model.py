@@ -338,7 +338,7 @@ class DirHandler:
             or src.is_block_device()
             or src.is_char_device()
         ):
-            return ret
+            return ret.append(dst)
         if src.is_file() or src.is_symlink():
             try:
                 os.makedirs(dst, exist_ok=True)
@@ -362,7 +362,7 @@ class DirHandler:
                 for error in err.args[0]:
                     ret.append(error[0])
         else:
-            return ret
+            return ret.append(dst)
         return ret
 
 
