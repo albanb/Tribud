@@ -167,6 +167,7 @@ class ConfigTest(unittest.TestCase):
             self.path1 = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "data\\config.json")
             )
+            os.makedirs(os.path.dirname(self.path1), exist_ok=True)
             with open(self.path1, "w") as filep:
                 filep.write(
                         '{"archive":{"input": ["C:\\\\Users\\\\toto\\\\config.json", "C:\\\\Users\\\\toto\\\\test"], "output": "C:\\\\Users\\\\toto\\\\tar"}}'
@@ -175,11 +176,13 @@ class ConfigTest(unittest.TestCase):
             self.path2 = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "data\\config2.json")
             )
+            os.makedirs(os.path.dirname(self.path2), exist_ok=True)
             with open(self.path2, "w") as filep:
                 filep.write('{"archive":{"input": ["Users\\\\config.json", "C:\\\\Users\\\\test"]}}')
             self.path3 = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "data\\config3.json")
             )
+            os.makedirs(os.path.dirname(self.path3), exist_ok=True)
             with open(self.path3, "w") as filep:
                 filep.write(
                     '{"archive: ["data\\\\config.json", "data\\\\test"], "output": "data\\\\tar"}'
@@ -188,6 +191,7 @@ class ConfigTest(unittest.TestCase):
             self.path1 = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "data/config.json")
             )
+            os.makedirs(os.path.dirname(self.path1), exist_ok=True)
             with open(self.path1, "w") as filep:
                 filep.write(
                     '{"archive":{"input": ["/home/alban/config.json", "/home/alban/test"], "output": "/home/alban/tar"}}'
@@ -196,11 +200,13 @@ class ConfigTest(unittest.TestCase):
             self.path2 = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "data/config2.json")
             )
+            os.makedirs(os.path.dirname(self.path2), exist_ok=True)
             with open(self.path2, "w") as filep:
                 filep.write('{"archive":{"input": ["home/config.json", "/home/test"]}}')
             self.path3 = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "data/config3.json")
             )
+            os.makedirs(os.path.dirname(self.path3), exist_ok=True)
             with open(self.path3, "w") as filep:
                 filep.write(
                     '{"archive: ["data/config.json", "data/test"], "output": "data/tar"}'
@@ -209,6 +215,7 @@ class ConfigTest(unittest.TestCase):
             self.path1 = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "data/config.json")
             )
+            os.makedirs(os.path.dirname(self.path1), exist_ok=True)
             with open(self.path1, "w") as filep:
                 filep.write(
                     '{"archive":{"input": ["/home/alban/config.json", "/home/alban/test"], "output": "/home/alban/tar"}}'
@@ -216,17 +223,17 @@ class ConfigTest(unittest.TestCase):
             self.path2 = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "data/config2.json")
             )
+            os.makedirs(os.path.dirname(self.path2), exist_ok=True)
             with open(self.path2, "w") as filep:
                 filep.write('{"archive":{"input": ["home/config.json", "/home/test"]}}')
             self.path3 = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "data/config3.json")
             )
+            os.makedirs(os.path.dirname(self.path3), exist_ok=True)
             with open(self.path3, "w") as filep:
                 filep.write(
                     '{"archive: ["data/config.json", "data/test"], "output": "data/tar"}'
                 )
-        os.makedirs(os.path.dirname(self.path1), exist_ok=True)
-        os.makedirs(os.path.dirname(self.path2), exist_ok=True)
 
     def test_wrong_path(self):
         self.assertRaises(IOError, model.ConfigManager, "/test1/test2")
