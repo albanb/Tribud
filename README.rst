@@ -39,5 +39,6 @@ Install it::
 Configuration
 -------------
 The configuration is done through a JSON file. Its location is determined depending on the OS:
-* On GNU/Linux, according to XDG specs, by default it is: /home/*user*/.config/tribud/config.json
-* On Windows, by default: C:\\Users\\*user*\\AppData\\Local
+
+- On GNU/Linux, according to XDG specs, by default it is: /home/*user*/.config/tribud/config.json
+- On Windows, by default: C:\\Users\\*user*\\AppData\\Local
