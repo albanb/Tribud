@@ -9,10 +9,21 @@ Tribud is a trivial back up manager. It aims at simply back-up normal files defi
 The configuration is done thanks to a json file.
 
 Feature
-Work in progress
+-------
+Able to manage one or more files or directory in a back-up directory.
+Log non back-up file in the terminal.
+Work on GNU/Linux and Windows.
 
 Installing
-Work in progress
+----------
+Download the zip.
+Build the package::
+ python -m build
+Install it::
+ pip install tribud-*version*-py3-none-any.whl
 
 Configuration
-Work in progress
+-------------
+The configuration is done through a JSON file. Its location is determined depending on the OS:
+* On GNU/Linux, according to XDG specs, by default it is: /home/*user*/.config/tribud/config.json
+* On Windows, by default: C:\\Users\\*user*\\AppData\\Local
