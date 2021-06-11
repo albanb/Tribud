@@ -10,9 +10,15 @@ The configuration is done thanks to a json file.
 
 Feature
 -------
-Able to manage one or more files or directory in a back-up directory.
-Log non back-up file in the terminal.
-Work on GNU/Linux and Windows.
+
+- Able to manage one or more files or directory in a back-up directory.
+- Log non back-up file in the terminal.
+- Work on GNU/Linux and Windows.
+
+Dependencies
+------------
+Python >=3.6
+appdirs >= 1.4.4
 
 Installing
 ----------
@@ -20,6 +26,10 @@ Download the zip.
 Build the package::
 
  python -m build
+
+Install required depencies if needed::
+
+ pip install -r requirements.txt
 
 Install it::
 
