@@ -65,9 +65,9 @@ def main():
     handler = model.DirHandler(bckdir.value)
     backup = model.Container(handler)
     if backup.connect() is None:
-        logger.warning("%s is not an absolute path", backup.bckup_dst)
+        logger.warning("%s is not an absolute path", bckdir.value)
     else:
-        logger.info("The backup directory is: %s", backup.bckup_dst)
+        logger.info("The backup directory is: %s", bckdir.value)
     err = []
     for files in toarchive.value:
         err.extend(backup.add(files))
