@@ -17,8 +17,9 @@ Feature
 
 Dependencies
 ------------
-Python >=3.6
-appdirs >= 1.4.4
+
+- Python >=3.6
+- appdirs >= 1.4.4
 
 Installing
 ----------
